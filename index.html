@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Insight Pro | Training Arena</title>
+    
+    <!-- Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+
+    <style>
+        body { 
+            background-color: #f3f4f6; 
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding-bottom: 50px;
+        }
+
+        /* Navbar */
+        .navbar { background: white; border-bottom: 1px solid #e5e7eb; }
+        .brand-text { font-weight: 800; letter-spacing: -0.5px; color: #4f46e5; }
+
+        /* Board Area */
+        .board-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        #board { width: 100%; }
+
+        /* Game List (Sidebar) */
+        .game-list-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .game-list {
+            overflow-y: auto;
+            flex: 1;
+            padding: 0;
+        }
+        .game-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .game-item:hover { background-color: #f9fafb; }
+        .game-item.active { background-color: #eef2ff; border-left: 4px solid #4f46e5; }
+        
+        /* Analysis Panel */
+        .analysis-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .moment-list { overflow-y: auto; flex: 1; padding: 15px; }
+        
+        .moment-card {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-left: 4px solid #ccc;
+            cursor: pointer;
+        }
+        .moment-card:hover { transform: translateX(2px); transition: transform 0.2s; }
+        .moment-card.blunder { border-left-color: #ef4444; background-color: #fef2f2; }
+        .moment-card.mistake { border-left-color: #f59e0b; background-color: #fffbeb; }
+
+        /* Eval Bar */
+        .eval-bar-wrapper {
+            height: 16px;
+            background: #374151;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .eval-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            width: 50%;
+            transition: width 0.3s ease;
+        }
+
+        /* Controls */
+        .control-btn { min-width: 45px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light py-3 mb-4">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand brand-text" href="#"><i class="fa-solid fa-chess me-2"></i>Chess Insight Pro</a>
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-secondary" id="engineStatus">Stockfish: Initializing...</span>
+            <input type="file" id="fileInput" accept=".csv" class="d-none">
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-upload me-2"></i>Upload CSV
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+    <div class="row g-4">
+        
+        <!-- LEFT: Game Selector -->
+        <div class="col-lg-3">
+            <div class="game-list-container">
+                <div class="p-3 border-bottom bg-light">
+                    <h6 class="fw-bold mb-2">Past Games</h6>
+                    <input type="text" id="searchBox" class="form-control form-control-sm mb-2" placeholder="Search opening...">
+                    <select class="form-select form-select-sm" id="sortSelect">
+                        <option value="mistakes">Sort: Lowest Accuracy</option>
+                        <option value="recent">Sort: Most Recent</option>
+                    </select>
+                </div>
+                <div class="game-list" id="gameList">
+                    <div class="text-center text-muted p-4 small">
+                        Please upload your CSV file to load games.
+                        <br><br>
+                        <a href="#" onclick="loadDemo()" class="text-decoration-underline">Load Demo Data</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: Board -->
+        <div class="col-lg-6">
+            <div class="board-wrapper">
+                
+                <!-- Game Header -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <h5 class="fw-bold mb-0" id="headerOpening">Select a Game</h5>
+                        <small class="text-muted" id="headerDetails">-</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-light text-dark border" id="headerResult">-</span>
+                    </div>
+                </div>
+
+                <!-- The Board -->
+                <div id="board"></div>
+
+                <!-- Eval Bar -->
+                <div class="eval-bar-wrapper">
+                    <div class="eval-fill" id="evalBar"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mb-3">
+                    <span>Black Advantage</span>
+                    <span id="evalScore" class="fw-bold text-dark">0.00</span>
+                    <span>White Advantage</span>
+                </div>
+
+                <!-- Controls -->
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <button class="btn btn-outline-secondary control-btn" onclick="gui.first()"><i class="fa-solid fa-backward-step"></i></button>
+                    <button class="btn btn-outline-secondary control-btn" onclick="gui.prev()"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="btn btn-outline-secondary control-btn" onclick="gui.next()"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button class="btn btn-outline-secondary control-btn" onclick="gui.last()"><i class="fa-solid fa-forward-step"></i></button>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button class="btn btn-dark flex-grow-1" onclick="gui.flip()"><i class="fa-solid fa-retweet me-2"></i>Flip Board</button>
+                    <button class="btn btn-warning flex-grow-1" onclick="gui.undoPractice()"><i class="fa-solid fa-rotate-left me-2"></i>Undo</button>
+                    <button class="btn btn-success flex-grow-1" onclick="gui.hint()"><i class="fa-solid fa-lightbulb me-2"></i>Hint</button>
+                </div>
+
+                <!-- Settings -->
+                <div class="mt-3 p-3 bg-light rounded">
+                    <label class="small fw-bold text-muted mb-1">Engine Strength (ELO: <span id="eloDisplay">800</span>)</label>
+                    <input type="range" class="form-range" min="0" max="20" value="0" id="skillRange">
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT: Analysis -->
+        <div class="col-lg-3">
+            <div class="analysis-panel">
+                <div class="p-3 border-bottom bg-light">
+                    <h6 class="fw-bold mb-2">Analysis Tool</h6>
+                    <button class="btn btn-primary w-100 btn-sm" id="btnScan" onclick="scanner.start()" disabled>
+                        <i class="fa-solid fa-magnifying-glass me-2"></i>Analyze Game
+                    </button>
+                    <!-- Progress Bar -->
+                    <div class="mt-2 d-none" id="scanProgressContainer">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Scanning...</span>
+                            <span id="scanPercent">0%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="moment-list" id="momentList">
+                    <div class="text-center text-muted small mt-5">
+                        Load a game and click "Analyze" to find your mistakes automatically.
+                    </div>
+                </div>
+
+                <div class="p-3 border-top bg-light">
+                    <small class="fw-bold text-muted">PGN Source</small>
+                    <textarea class="form-control form-control-sm mt-1" rows="3" id="pgnDisplay" readonly style="font-size: 0.8rem; font-family: monospace;"></textarea>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+<script>
+/**
+ * GLOBAL APP STATE
+ */
+const app = {
+    games: [],
+    currentGame: null,
+    chess: new Chess(),
+    board: null,
+    moveHistory: [],
+    currentMoveIndex: -1,
+    userColor: 'w'
+};
+
+/**
+ * STOCKFISH ENGINE MANAGER
+ */
+const engine = {
+    worker: null,
+    isReady: false,
+
+    init: function() {
+        const statusEl = document.getElementById('engineStatus');
+        
+        // Using a Blob to load worker to avoid cross-origin issues
+        fetch('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js')
+            .then(response => response.text())
+            .then(script => {
+                const blob = new Blob([script], { type: 'application/javascript' });
+                this.worker = new Worker(URL.createObjectURL(blob));
+                
+                this.worker.postMessage('uci');
+                
+                this.worker.onmessage = (e) => {
+                    const line = e.data;
+                    if(line === 'uciok') {
+                        this.isReady = true;
+                        statusEl.className = 'badge bg-success';
+                        statusEl.innerText = 'Stockfish: Ready';
+                    }
+                    this.handleMessage(line);
+                };
+            })
+            .catch(err => {
+                console.error(err);
+                statusEl.className = 'badge bg-danger';
+                statusEl.innerText = 'Engine Failed';
+            });
+    },
+
+    handleMessage: function(line) {
+        // Parse Evaluation for Bar
+        if(line.startsWith('info') && line.includes('score cp')) {
+            const match = line.match(/score cp (-?\d+)/);
+            if(match) {
+                let cp = parseInt(match[1]);
+                // Normalizing score to White perspective for the bar logic
+                // Stockfish sends score relative to side to move
+                if(app.chess.turn() === 'b') cp = -cp;
+                gui.updateEval(cp / 100);
+            }
+        }
+    },
+
+    analyze: function(fen) {
+        if(!this.isReady) return;
+        this.worker.postMessage('stop');
+        this.worker.postMessage(`position fen ${fen}`);
+        this.worker.postMessage('go depth 15');
+    },
+
+    setSkill: function(level) {
+        if(!this.isReady) return;
+        this.worker.postMessage(`setoption name Skill Level value ${level}`);
+        // Add probability of error for lower levels
+        const err = Math.max(0, (20 - level) * 10);
+        this.worker.postMessage(`setoption name Skill Level Probability value ${err}`);
+    },
+
+    // Async Score Getter for Scanner
+    getScore: function(fen) {
+        return new Promise((resolve) => {
+            if(!this.isReady) resolve(0);
+            
+            const listener = (e) => {
+                const line = e.data;
+                if(line.startsWith('info') && line.includes('score cp')) {
+                    const match = line.match(/score cp (-?\d+)/);
+                    if(match) {
+                        this.worker.removeEventListener('message', listener);
+                        // Restore original listener
+                        this.worker.addEventListener('message', (ev) => this.handleMessage(ev.data));
+                        resolve(parseInt(match[1]));
+                    }
+                }
+                // Handle Mate scores
+                if(line.startsWith('info') && line.includes('score mate')) {
+                    this.worker.removeEventListener('message', listener);
+                    this.worker.addEventListener('message', (ev) => this.handleMessage(ev.data));
+                    resolve(9999); 
+                }
+            };
+
+            // Temporarily hijack message listener
+            const oldHandler = this.worker.onmessage; 
+            this.worker.onmessage = null; 
+            this.worker.addEventListener('message', listener);
+            
+            this.worker.postMessage('stop');
+            this.worker.postMessage(`position fen ${fen}`);
+            this.worker.postMessage('go depth 6'); // Fast depth for scanning
+        });
+    }
+};
+
+/**
+ * BLUNDER SCANNER
+ */
+const scanner = {
+    start: async function() {
+        if(!app.currentGame) return;
+        
+        const btn = document.getElementById('btnScan');
+        const container = document.getElementById('scanProgressContainer');
+        const bar = document.getElementById('scanBar');
+        const list = document.getElementById('momentList');
+        
+        btn.disabled = true;
+        container.classList.remove('d-none');
+        list.innerHTML = ''; // Clear list
+
+        const tempChess = new Chess();
+        const moves = app.moveHistory;
+        let mistakes = 0;
+
+        // Iterate through all moves
+        for(let i=0; i < moves.length; i++) {
+            // Update progress
+            const pct = Math.round(((i+1)/moves.length)*100);
+            bar.style.width = `${pct}%`;
+            document.getElementById('scanPercent').innerText = `${pct}%`;
+
+            const move = moves[i]; // SAN string
+            const isUserMove = (tempChess.turn() === app.userColor);
+            
+            // Execute move on temp board
+            tempChess.move(move);
+            const fenAfter = tempChess.fen();
+
+            // Analyze only USER moves
+            if(isUserMove) {
+                // Get evaluation after move
+                // Note: Engine returns score relative to side to move (Opponent)
+                // So if engine says +200 (Opponent winning), that's -200 for user.
+                const rawScore = await engine.getScore(fenAfter);
+                
+                // Heuristic: If rawScore > 200 (Opponent is winning by 2 pawns), flag it.
+                // Or if rawScore > 600 (Blunder).
+                // This is a simplified relative check.
+                
+                if(rawScore > 600) {
+                    this.addMoment(i, move, "Blunder", "Opponent winning decisively", fenAfter);
+                    mistakes++;
+                } else if(rawScore > 200) {
+                    this.addMoment(i, move, "Mistake", "Opponent has advantage", fenAfter);
+                    mistakes++;
+                }
+                
+                // Allow UI to breathe
+                await new Promise(r => setTimeout(r, 5));
+            }
+        }
+
+        container.classList.add('d-none');
+        btn.disabled = false;
+        
+        if(mistakes === 0) {
+            list.innerHTML = '<div class="text-center text-success mt-4">No major blunders found! Good game.</div>';
+        }
+    },
+
+    addMoment: function(idx, moveSan, type, desc, fen) {
+        const list = document.getElementById('momentList');
+        const div = document.createElement('div');
+        const num = Math.floor(idx/2) + 1;
+        
+        div.className = `moment-card ${type === 'Blunder' ? 'blunder' : 'mistake'}`;
+        div.innerHTML = `
+            <div class="d-flex justify-content-between fw-bold">
+                <span>${num}.${moveSan}</span>
+                <span class="badge bg-secondary">${type}</span>
+            </div>
+            <div class="small text-muted">${desc}</div>
+        `;
+        div.onclick = () => gui.jumpTo(idx);
+        list.appendChild(div);
+    }
+};
+
+/**
+ * GUI & BOARD
+ */
+const gui = {
+    init: function() {
+        // Initialize Board with explicit Piece URL to fix "invisible pieces"
+        app.board = Chessboard('board', {
+            draggable: true,
+            position: 'start',
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+            onDragStart: this.onDragStart,
+            onDrop: this.onDrop,
+            onSnapEnd: () => app.board.position(app.chess.fen())
+        });
+        
+        $(window).resize(() => app.board.resize());
+        engine.init();
+        
+        // Listeners
+        document.getElementById('skillRange').oninput = function() {
+            document.getElementById('eloDisplay').innerText = 800 + (this.value * 100);
+            engine.setSkill(this.value);
+        };
+        
+        document.getElementById('fileInput').onchange = (e) => {
+            if(e.target.files.length) this.parseCSV(e.target.files[0]);
+        };
+        
+        document.getElementById('sortSelect').onchange = this.renderList;
+        document.getElementById('searchBox').oninput = this.renderList;
+    },
+
+    onDragStart: function(source, piece) {
+        if (app.chess.game_over()) return false;
+        // Only allow moving own pieces
+        if ((app.chess.turn() === 'w' && piece.search(/^b/) !== -1) ||
+            (app.chess.turn() === 'b' && piece.search(/^w/) !== -1)) {
+            return false;
+        }
+    },
+
+    onDrop: function(source, target) {
+        const move = app.chess.move({
+            from: source,
+            to: target,
+            promotion: 'q'
+        });
+
+        if (move === null) return 'snapback';
+        
+        // Practice mode active (deviated from game history)
+        engine.analyze(app.chess.fen());
+    },
+
+    loadGame: function(id) {
+        const data = app.games[id];
+        app.currentGame = data;
+        app.userColor = data.userColor.startsWith('b') ? 'b' : 'w';
+        
+        // Load PGN
+        app.chess.load_pgn(data.pgn);
+        app.moveHistory = app.chess.history(); // Get SAN array
+        
+        // Reset to Start
+        app.chess.reset();
+        app.currentMoveIndex = -1;
+        app.board.position('start');
+        app.board.orientation(app.userColor === 'b' ? 'black' : 'white');
+        
+        // UI Updates
+        $('#headerOpening').text(data.opening);
+        $('#headerDetails').text(`${data.userRating} vs ${data.oppRating} (${data.date})`);
+        $('#headerResult').text(data.result);
+        $('#pgnDisplay').val(data.pgn);
+        $('#btnScan').prop('disabled', false);
+        $('#momentList').html('<div class="text-center text-muted mt-4">Ready to analyze.</div>');
+        
+        // Engine Config
+        const skill = Math.max(0, Math.min(20, Math.floor((data.oppRating - 800) / 100)));
+        $('#skillRange').val(skill);
+        $('#eloDisplay').text(800 + (skill*100));
+        engine.setSkill(skill);
+        
+        engine.analyze(app.chess.fen());
+    },
+
+    // Navigation
+    next: function() {
+        if(app.currentMoveIndex < app.moveHistory.length - 1) {
+            app.currentMoveIndex++;
+            app.chess.move(app.moveHistory[app.currentMoveIndex]);
+            app.board.position(app.chess.fen());
+            engine.analyze(app.chess.fen());
+        }
+    },
+    prev: function() {
+        if(app.currentMoveIndex >= 0) {
+            app.chess.undo();
+            app.currentMoveIndex--;
+            app.board.position(app.chess.fen());
+            engine.analyze(app.chess.fen());
+        }
+    },
+    first: function() {
+        app.chess.reset();
+        app.currentMoveIndex = -1;
+        app.board.position(app.chess.fen());
+        engine.analyze(app.chess.fen());
+    },
+    last: function() {
+        while(app.currentMoveIndex < app.moveHistory.length - 1) {
+            app.currentMoveIndex++;
+            app.chess.move(app.moveHistory[app.currentMoveIndex]);
+        }
+        app.board.position(app.chess.fen());
+        engine.analyze(app.chess.fen());
+    },
+    
+    // Jump specific index
+    jumpTo: function(index) {
+        app.chess.reset();
+        for(let i=0; i<=index; i++) {
+            app.chess.move(app.moveHistory[i]);
+        }
+        app.currentMoveIndex = index;
+        app.board.position(app.chess.fen());
+        engine.analyze(app.chess.fen());
+    },
+
+    flip: function() { app.board.flip(); },
+    
+    undoPractice: function() {
+        // Undo a move made on the board manually
+        app.chess.undo();
+        app.board.position(app.chess.fen());
+        engine.analyze(app.chess.fen());
+    },
+    
+    hint: function() {
+        engine.analyze(app.chess.fen());
+        // In full version, we parse 'bestmove'
+        // Here we rely on Eval Bar to show who is winning
+    },
+
+    updateEval: function(score) {
+        // Display
+        const txt = score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2);
+        $('#evalScore').text(txt);
+        
+        // Bar Width (Clamp between -5 and +5)
+        // 0 = 50%, 5 = 100%, -5 = 0%
+        let val = Math.max(-5, Math.min(5, score));
+        let pct = 50 + (val * 10);
+        $('#evalBar').css('width', `${pct}%`);
+    },
+
+    parseCSV: function(file) {
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                this.processGames(results.data);
+            }
+        });
+    },
+
+    processGames: function(data) {
+        app.games = data.map((row, idx) => {
+            // Clean PGN
+            let pgn = row.pgn || '';
+            pgn = pgn.replace(/""/g, '"');
+            
+            // Normalize Result
+            let res = row.result;
+            if(!res) {
+                if(pgn.includes('Result "1-0"')) res = '1-0';
+                else if(pgn.includes('Result "0-1"')) res = '0-1';
+                else res = 'Draw';
+            }
+
+            return {
+                id: idx,
+                date: (row.date || '').replace(/\./g, '-'),
+                opening: row.opening || 'Unknown',
+                userRating: row.userRating || '?',
+                oppRating: row.opponentRating || '?',
+                userColor: (row.userColor || 'white').toLowerCase(),
+                accuracy: parseFloat(row.userAccuracy) || 0,
+                result: res,
+                pgn: pgn
+            };
+        });
+        
+        this.renderList();
+    },
+
+    renderList: function() {
+        const list = document.getElementById('gameList');
+        const sort = document.getElementById('sortSelect').value;
+        const search = document.getElementById('searchBox').value.toLowerCase();
+        
+        let sorted = [...app.games];
+        
+        if(sort === 'mistakes') {
+            sorted.sort((a,b) => (a.accuracy||100) - (b.accuracy||100));
+        } else {
+            // Recent first (rough id sort)
+            sorted.sort((a,b) => b.id - a.id);
+        }
+
+        list.innerHTML = '';
+        
+        sorted.forEach(g => {
+            if(!g.opening.toLowerCase().includes(search)) return;
+            
+            const div = document.createElement('div');
+            div.className = 'game-item';
+            if(app.currentGame && app.currentGame.id === g.id) div.classList.add('active');
+            
+            // Win/Loss color
+            let badge = 'bg-secondary';
+            // Simple check based on user color + result string logic would go here
+            // keeping simple for UI
+            
+            div.innerHTML = `
+                <div class="d-flex justify-content-between small fw-bold">
+                    <span class="text-truncate" style="max-width: 140px;">${g.opening}</span>
+                    <span>Acc: ${g.accuracy}%</span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mt-1">
+                    <span>vs ${g.oppRating} (${g.userColor})</span>
+                    <span>${g.date}</span>
+                </div>
+            `;
+            div.onclick = () => {
+                gui.loadGame(g.id);
+                gui.renderList(); // re-render to update active state
+            };
+            list.appendChild(div);
+        });
+    }
+};
+
+// Demo Data
+function loadDemo() {
+    const csv = `date,userColor,userRating,opponentRating,opening,result,userAccuracy,gameUrl,pgn
+2025-11-10,white,1200,1250,French Defense,win,98.14,url,"[Result ""1-0""] 1. e4 e6 2. d4 d5 3. Nd2 Nf6 4. e5 Nfd7"
+2025-11-10,black,1150,1300,Italian Game,loss,45.5,url,"[Result ""1-0""] 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. O-O Nf6 5. d3 d6 6. Bg5 h6 7. Bh4 g5 8. Bg3 h5 9. Nxg5 h4 10. Nxf7 hxg3 11. Nxd8 Bg4 12. Qd2 Nd4 13. Nc3 Nf3+ 14. gxf3 Bxf3 15. hxg3 Rh1#"`;
+    
+    Papa.parse(csv, {
+        header: true,
+        complete: (res) => gui.processGames(res.data)
+    });
+}
+
+// Init
+$(document).ready(() => {
+    gui.init();
+});
+
+</script>
+</body>
+</html>
