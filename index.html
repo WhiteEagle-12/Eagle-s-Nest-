@@ -76,7 +76,7 @@
         #analysisListContainer { flex: none; display: none !important; } /* Hidden as requested */
         .analysis-mode-hidden { display: none !important; }
 
-        .log-entry { padding: 6px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .log-entry { padding: 6px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .log-entry:hover { background: #f8fafc; }
         .log-entry.active { background: #eef2ff; border-left: 4px solid #6366f1; }
         
@@ -281,7 +281,7 @@
             <div class="mode-tab" id="tab-puzzles" onclick="GUI.switchTab('puzzles')">
                 <i class="fa-solid fa-puzzle-piece me-1"></i> Smart Puzzles <span id="puzzleBadge" class="badge bg-danger rounded-pill ms-1 d-none">0</span>
             </div>
-            <!-- NEW ARCHIVE TAB -->
+            <!-- ARCHIVE TAB -->
             <div class="mode-tab" id="tab-archive" onclick="GUI.switchTab('archive')">
                 <i class="fa-solid fa-box-archive me-1"></i> Puzzle Archive <span id="archiveBadge" class="badge bg-secondary rounded-pill ms-1">0</span>
             </div>
@@ -384,15 +384,15 @@
 
             </div>
             
-            <!-- NEW PUZZLE ARCHIVE PANEL -->
+            <!-- PUZZLE ARCHIVE PANEL (Removed FEN list and Clear All button) -->
             <div id="puzzleArchivePanel" class="d-none board-card" style="max-width: 600px; padding: 20px;">
                 <h5 class="fw-bold">Puzzle Archive (<span id="archiveCount">0</span> Puzzles)</h5>
                 <div class="d-flex gap-2 mb-3">
-                    <button class="btn btn-primary w-50" onclick="ArchiveManager.startRandom()"><i class="fa-solid fa-shuffle"></i> Start Random Puzzle</button>
-                    <button class="btn btn-outline-danger w-50" onclick="ArchiveManager.clearArchive()"><i class="fa-solid fa-trash-can"></i> Clear All</button>
+                    <button class="btn btn-primary w-100" onclick="ArchiveManager.startRandom()"><i class="fa-solid fa-shuffle"></i> Start Random Puzzle from Archive</button>
                 </div>
-                <div id="archiveListContainer" style="max-height: 400px; overflow-y: auto;">
-                    <div class="text-center text-muted p-3">No puzzles saved yet.</div>
+                <!-- Information replacing the list of FENs -->
+                <div id="archiveListInfo" class="text-center text-muted p-3">
+                     Puzzles loaded in the archive are available for random training.
                 </div>
             </div>
 
@@ -477,8 +477,14 @@
         <div class="mb-3">
             <label class="form-label small fw-bold">Gemini API Key</label>
             <input type="password" id="apiKeyInput" class="form-control form-control-sm" placeholder="Paste Key Here...">
-            <button class="btn btn-sm btn-outline-primary mt-2" onclick="localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); alert('Key Saved!')">Save Key</button>
+            <button class="btn btn-sm btn-outline-primary mt-2" onclick="localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); GUI.showToast('Key Saved!', 'success')">Save Key</button>
         </div>
+        <hr>
+        <h6 class="mt-4">Data Management</h6>
+        <!-- NEW: Clear Archive button moved here -->
+        <button class="btn btn-sm btn-danger w-100" onclick="ArchiveManager.clearArchive()">
+            <i class="fa-solid fa-trash-can me-2"></i> Clear All Archived Puzzles
+        </button>
       </div>
     </div>
   </div>
@@ -926,7 +932,7 @@ ${logStr}
                 log("Gemini Analysis Complete.");
                 return true;
             }
-            log("Gemini response was not valid JSON.", 'ERROR');
+            log("Gemini response was not valid JSON or complete.", 'ERROR');
             return false;
         } catch (e) { 
             console.error("Gemini Error", e);
@@ -1002,6 +1008,17 @@ const Game = {
     },
 
     load: function(id) {
+        // Confirmation dialog logic: If analysis is complete/running, confirm switch.
+        const isActiveAnalysis = Game.analysisData.length > 0;
+        const inMiddleOfGame = Game.index > -1;
+        
+        if (isActiveAnalysis || inMiddleOfGame) {
+            // Use window.confirm instead of alert/modal for simplicity as per existing code base
+            if (!confirm("Analysis is running or complete. Switching games will clear current analysis data. Continue?")) {
+                return; 
+            }
+        }
+
         const g = this.data.find(x => x.id === id);
         if(!g) return;
         
@@ -1518,47 +1535,24 @@ const ArchiveManager = {
     },
 
     clearArchive: function() {
-        // Changed alert to custom modal/confirm replacement
-        if(window.confirm("Are you sure you want to delete ALL saved puzzles?")) {
+        // Changed alert to custom modal/confirm replacement, moved from Archive Panel to Settings
+        if(confirm("Are you sure you want to delete ALL saved puzzles? This action cannot be undone.")) {
             Game.puzzleArchive = [];
             Game.saveArchive();
-            this.renderList();
+            this.renderList(); // Re-render the info text
             GUI.updateArchiveCount();
             GUI.showToast("Puzzle archive cleared.", "success");
         }
     },
 
     renderList: function() {
-        const list = document.getElementById('archiveListContainer');
-        list.innerHTML = "";
+        // Updated to remove the FEN list and show summary text instead
+        const infoDiv = document.getElementById('archiveListInfo');
         if (Game.puzzleArchive.length === 0) {
-            list.innerHTML = '<div class="text-center text-muted p-3">No puzzles saved yet.</div>';
-            return;
+            infoDiv.innerHTML = 'Puzzles loaded in the archive are available for random training. (Archive is currently empty)';
+        } else {
+             infoDiv.innerHTML = `There are ${Game.puzzleArchive.length} puzzles in the archive. Use "Start Random Puzzle from Archive" to begin training.`;
         }
-        
-        Game.puzzleArchive.slice().reverse().forEach((p, i) => { // Reverse to show newest first
-            const date = new Date(p.date).toLocaleDateString();
-            const div = document.createElement('div');
-            div.className = 'p-2 border-bottom d-flex justify-content-between align-items-center cursor-pointer';
-            div.style.transition = 'background 0.1s';
-            div.onmouseover = () => div.style.background = '#f8fafc';
-            div.onmouseout = () => div.style.background = 'white';
-
-            div.innerHTML = `
-                <div class="small">
-                    <strong>${i + 1}. FEN:</strong> ${p.fen.split(' ')[0]}
-                    <div class="text-muted" style="font-size: 0.8rem;">Solution: ${p.solution} (${p.color === 'w' ? 'White' : 'Black'} to move)</div>
-                </div>
-                <span class="badge bg-light text-muted">${date}</span>
-            `;
-            // Set up click handler to load this specific puzzle
-            div.onclick = () => {
-                Game.currentPuzzles = [p];
-                GUI.switchTab('puzzles');
-                GUI.showToast("Loaded puzzle from archive.", "success");
-            }
-            list.appendChild(div);
-        });
     }
 };
 
@@ -1782,6 +1776,7 @@ const GUI = {
         const count = Game.puzzleArchive.length;
         document.getElementById('archiveCount').innerText = count;
         document.getElementById('archiveBadge').innerText = count;
+        ArchiveManager.renderList(); // Update the info text when count changes
     },
 
     switchTab: function(mode) {
@@ -1852,7 +1847,7 @@ const GUI = {
             showAll(archiveIds);
             ArchiveManager.renderList();
             document.getElementById('gameTitle').innerText = "Puzzle Archive";
-            analysisListContainer.classList.remove('d-none');
+            analysisListContainer.classList.add('d-none'); // Hide the move log/list when viewing the archive panel
             coachDisplay.style.flex = 'none';
         }
         else if (mode === 'play') {
@@ -1889,8 +1884,6 @@ const GUI = {
         document.getElementById('sidebar').classList.toggle('collapsed');
         setTimeout(() => this.board.resize(), 300);
     },
-
-    // GUI.toggleFullscreen removed
 
     // Play Mode Features
     flip: function(mode) {
