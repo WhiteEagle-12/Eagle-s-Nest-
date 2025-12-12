@@ -44,9 +44,9 @@
         .mode-tab.active { background: #f8fafc; color: #1e1b4b; border-color: #cbd5e1; border-bottom: 1px solid #f8fafc; margin-bottom: -1px; z-index: 2; }
         
         /* Updated padding to prevent button overlap */
-        .arena { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 80px 20px 20px; overflow-y: auto; position: relative; }
+        .arena { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 80px 20px 20px; overflow-y: auto; position: relative; min-height: 0; }
         /* Reduced max-width slightly */
-        .board-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 10px; position: relative; transition: all 0.3s; }
+        .board-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 10px; position: relative; transition: all 0.3s; z-index: 5; }
         
         /* Fullscreen Board Mode Fix */
         .board-card.fullscreen-mode {
@@ -69,16 +69,20 @@
         
         /* Analysis Panel - Auto Sizing */
         .analysis-panel { 
-            flex: 0 0 30vh; /* Takes 30% of vertical height, letting board take the rest */
-            min-height: 200px; /* Minimum useful height */
+            /* Changed from fixed 30vh to allow better resizing */
+            flex: 0 0 35vh; 
+            min-height: 150px;
+            max-height: 50vh;
             background: white; 
             border-top: 1px solid #cbd5e1; 
             display: flex; 
             flex-direction: row; 
             flex-shrink: 0; 
-            transition: height 0.3s; 
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 20;
         }
-        .analysis-moves { flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; }
+        .analysis-moves { flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; position: relative; }
         .analysis-logs { width: 40%; display: flex; flex-direction: column; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; transition: width 0.3s; }
         .analysis-logs.hidden { display: none !important; }
         .analysis-panel.hidden { display: none !important; }
@@ -104,7 +108,7 @@
         .class-Missed { background-color: #ff879c; } 
         .class-Neutral { background-color: #a3a3a3; } 
 
-        .coach-display { padding: 15px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; color: #334155; min-height: 100px; overflow-y: auto; position: relative; border-left: 4px solid #cbd5e1; height: 100%; }
+        .coach-display { padding: 15px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; color: #334155; min-height: 0; flex: 1; overflow-y: auto; position: relative; border-left: 4px solid #cbd5e1; }
         
         .coach-display.Brilliant { border-left-color: #1baca6; background: #e0f2f1; }
         .coach-display.Great { border-left-color: #5c8bb0; background: #e1f5fe; }
@@ -189,6 +193,14 @@
             color: #ef4444; font-size: 3rem; font-weight: 900; text-transform: uppercase;
             text-shadow: 2px 2px 0 #fff; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        
+        .analysis-complete-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 55;
+            background: rgba(255,255,255,0.4);
+            animation: fadeInOut 1.5s ease-in-out forwards;
+        }
+        @keyframes fadeInOut { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
 
         /* Mobile / Small Screen Responsiveness */
         @media (max-width: 768px) {
@@ -298,6 +310,7 @@
             <button onclick="GUI.next()" title="Next Move"><i class="fa-solid fa-chevron-right"></i></button>
             <button onclick="GUI.last()" title="Last Move"><i class="fa-solid fa-forward-step"></i></button>
             <div style="height: 1px; background: #e2e8f0; margin: 2px 5px;"></div>
+            <button onclick="GUI.showBestMove()" title="Show Best Move" class="text-primary"><i class="fa-solid fa-star"></i></button>
             <button onclick="GUI.flip()" title="Flip Board"><i class="fa-solid fa-retweet"></i></button>
         </div>
 
@@ -334,6 +347,12 @@
                     <!-- Checkmate Overlay -->
                     <div id="checkmateOverlay" class="checkmate-overlay d-none">
                         <div class="checkmate-text">CHECKMATE</div>
+                    </div>
+                    <div id="analysisCompleteOverlay" class="d-none">
+                         <div class="bg-white p-3 rounded shadow d-flex align-items-center gap-2">
+                             <i class="fa-solid fa-circle-check text-success fa-2x"></i>
+                             <span class="fw-bold fs-4">Analysis Done</span>
+                         </div>
                     </div>
                 </div>
                 
@@ -422,7 +441,7 @@
                         <button class="btn btn-sm btn-outline-dark" onclick="GUI.copyAnalysis()" title="Copy Full Analysis">
                              <i class="fa-solid fa-copy"></i>
                         </button>
-                        <button class="btn btn-sm btn-primary" id="scanBtn" onclick="Scanner.start()" disabled>
+                        <button class="btn btn-sm btn-primary" id="scanBtn" onclick="Scanner.start()">
                             <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Full Analysis
                         </button>
                     </div>
@@ -436,7 +455,8 @@
                     </div>
                 </div>
 
-                <div class="p-2 bg-light border-bottom d-none" id="scanProgress">
+                <!-- Progress Bar Container (Absolute Bottom or Overlay inside panel) -->
+                <div class="p-2 bg-light border-bottom d-none" id="scanProgress" style="position: absolute; bottom: 0; left: 0; width: 100%; z-index: 50;">
                     <div class="progress" style="height: 5px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
                     </div>
@@ -1063,129 +1083,148 @@ const Scanner = {
         const focus = document.getElementById('analysisFocus').value;
         const navBtns = document.querySelectorAll('#verticalAnalysisControls button');
 
+        // Reset and show UI
         btn.disabled = true;
-        navBtns.forEach(b => b.disabled = true); // Disable controls
+        navBtns.forEach(b => b.disabled = true);
+        
+        // Force removal of hidden class and ensure z-index visibility
         progressBox.classList.remove('d-none');
+        bar.style.width = '0%';
+        bar.className = "progress-bar progress-bar-striped progress-bar-animated"; // Reset class
         
-        Game.analysisData = []; 
-        Game.puzzles = []; 
-        
-        const moves = Game.history;
-        const tempChess = new Chess();
-        
-        for(let i=0; i<moves.length; i++) {
-            const fenBefore = tempChess.fen();
+        try {
+            Game.analysisData = []; 
+            Game.puzzles = []; 
             
-            let isBook = false;
-            if (i < 15) {
-                const bookResult = await this.fetchBookData(fenBefore);
-                if (bookResult) {
-                    const bookMoves = bookResult.moves.map(m => m.uci);
-                    const moveObj = moves[i];
-                    const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
-                    if (bookMoves.includes(userUci)) isBook = true;
-                }
-            }
-
-            const tacticalSnapshot = HeatMap.analyze(tempChess);
-
-            const preMoveResult = await Engine.runScan(fenBefore);
-            let scoreBefore = this.parseEval(preMoveResult.eval);
+            const moves = Game.history;
+            const tempChess = new Chess();
             
-            let bestMoveSan = preMoveResult.bestMove;
-            let bestLineSan = "";
-
-            if(preMoveResult.bestMove && preMoveResult.bestMove !== '-') {
-                const simGame = new Chess(fenBefore);
-                const bm = simGame.move({ from: preMoveResult.bestMove.substring(0,2), to: preMoveResult.bestMove.substring(2,4), promotion: 'q' });
-                if(bm) bestMoveSan = bm.san;
-                if(preMoveResult.pv) bestLineSan = this.uciToSan(fenBefore, preMoveResult.pv);
-            }
-
-            const moveObj = moves[i];
-            const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
-            
-            tempChess.move(moveObj.san);
-            const fenAfter = tempChess.fen();
-            
-            const isMate = tempChess.in_checkmate();
-            let scoreAfter = 0;
-            let evAfterStr = "";
-
-            if (isMate) {
-                scoreAfter = (moveObj.color === 'w') ? 100 : -100;
-                evAfterStr = "M0"; 
-            } else {
-                const postMoveResult = await Engine.runScan(fenAfter);
-                evAfterStr = postMoveResult.eval;
-                scoreAfter = this.parseEval(postMoveResult.eval);
-            }
-
-            let evalLoss = (moveObj.color === 'w') ? scoreBefore - scoreAfter : scoreAfter - scoreBefore;
-            if (moveObj.color === 'b') evalLoss = -evalLoss;
-            let cls = "Neutral";
-            let loss = 0;
-            if (moveObj.color === 'w') loss = scoreBefore - scoreAfter;
-            else loss = scoreAfter - scoreBefore;
-            
-            if (isBook) cls = "Book";
-            else if (isMate) cls = "Best";
-            else if (userUci === preMoveResult.bestMove) cls = "Best";
-            else {
-                const wasWinning = (moveObj.color === 'w' ? scoreBefore > 2 : scoreBefore < -2);
-                const isWinning = (moveObj.color === 'w' ? scoreAfter > 1 : scoreAfter < -1);
+            for(let i=0; i<moves.length; i++) {
+                const fenBefore = tempChess.fen();
                 
-                if (wasWinning && !isWinning) cls = "Missed"; // Missed Win
-                else if (loss >= 2.0) cls = "Blunder";
-                else if (loss >= 1.0) cls = "Mistake";
-                else if (loss >= 0.5) cls = "Inaccuracy";
-                else if (loss >= 0.2) cls = "Good";
-                else if (loss >= 0.05) cls = "Excellent";
-                else cls = "Best"; 
+                let isBook = false;
+                if (i < 15) {
+                    const bookResult = await this.fetchBookData(fenBefore);
+                    if (bookResult) {
+                        const bookMoves = bookResult.moves.map(m => m.uci);
+                        const moveObj = moves[i];
+                        const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
+                        if (bookMoves.includes(userUci)) isBook = true;
+                    }
+                }
+
+                const tacticalSnapshot = HeatMap.analyze(tempChess);
+
+                const preMoveResult = await Engine.runScan(fenBefore);
+                let scoreBefore = this.parseEval(preMoveResult.eval);
+                
+                let bestMoveSan = preMoveResult.bestMove;
+                let bestLineSan = "";
+
+                if(preMoveResult.bestMove && preMoveResult.bestMove !== '-') {
+                    const simGame = new Chess(fenBefore);
+                    const bm = simGame.move({ from: preMoveResult.bestMove.substring(0,2), to: preMoveResult.bestMove.substring(2,4), promotion: 'q' });
+                    if(bm) bestMoveSan = bm.san;
+                    if(preMoveResult.pv) bestLineSan = this.uciToSan(fenBefore, preMoveResult.pv);
+                }
+
+                const moveObj = moves[i];
+                const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
+                
+                tempChess.move(moveObj.san);
+                const fenAfter = tempChess.fen();
+                
+                const isMate = tempChess.in_checkmate();
+                let scoreAfter = 0;
+                let evAfterStr = "";
+
+                if (isMate) {
+                    scoreAfter = (moveObj.color === 'w') ? 100 : -100;
+                    evAfterStr = "M0"; 
+                } else {
+                    const postMoveResult = await Engine.runScan(fenAfter);
+                    evAfterStr = postMoveResult.eval;
+                    scoreAfter = this.parseEval(postMoveResult.eval);
+                }
+
+                let evalLoss = (moveObj.color === 'w') ? scoreBefore - scoreAfter : scoreAfter - scoreBefore;
+                if (moveObj.color === 'b') evalLoss = -evalLoss;
+                let cls = "Neutral";
+                let loss = 0;
+                if (moveObj.color === 'w') loss = scoreBefore - scoreAfter;
+                else loss = scoreAfter - scoreBefore;
+                
+                if (isBook) cls = "Book";
+                else if (isMate) cls = "Best";
+                else if (userUci === preMoveResult.bestMove) cls = "Best";
+                else {
+                    const wasWinning = (moveObj.color === 'w' ? scoreBefore > 2 : scoreBefore < -2);
+                    const isWinning = (moveObj.color === 'w' ? scoreAfter > 1 : scoreAfter < -1);
+                    
+                    if (wasWinning && !isWinning) cls = "Missed"; // Missed Win
+                    else if (loss >= 2.0) cls = "Blunder";
+                    else if (loss >= 1.0) cls = "Mistake";
+                    else if (loss >= 0.5) cls = "Inaccuracy";
+                    else if (loss >= 0.2) cls = "Good";
+                    else if (loss >= 0.05) cls = "Excellent";
+                    else cls = "Best"; 
+                }
+                
+                Game.analysisData.push({
+                    san: moveObj.san, color: moveObj.color,
+                    eval: evAfterStr, 
+                    evalDiff: loss.toFixed(2),
+                    wdl: preMoveResult.wdl,
+                    bestMoveSan: bestMoveSan,
+                    pvSan: bestLineSan,
+                    classification: cls,
+                    fenBefore: fenBefore,
+                    isMate: isMate,
+                    tactics: tacticalSnapshot
+                });
+                
+                if ((cls === 'Blunder' || cls === 'Mistake' || cls === 'Missed') && moveObj.color === Game.userColor) {
+                    Game.puzzles.push({ fen: fenBefore, color: moveObj.color, solution: preMoveResult.bestMove });
+                }
+
+                bar.style.width = Math.round(((i+1)/moves.length)*50) + "%"; 
+                text.innerText = `Analyzing: ${i+1}/${moves.length}`;
             }
-            
-            Game.analysisData.push({
-                san: moveObj.san, color: moveObj.color,
-                eval: evAfterStr, 
-                evalDiff: loss.toFixed(2),
-                wdl: preMoveResult.wdl,
-                bestMoveSan: bestMoveSan,
-                pvSan: bestLineSan,
-                classification: cls,
-                fenBefore: fenBefore,
-                isMate: isMate,
-                tactics: tacticalSnapshot
-            });
-            
-            if ((cls === 'Blunder' || cls === 'Mistake' || cls === 'Missed') && moveObj.color === Game.userColor) {
-                Game.puzzles.push({ fen: fenBefore, color: moveObj.color, solution: preMoveResult.bestMove });
+
+            if (Game.puzzles.length > 0) {
+                document.getElementById('puzzleBadge').innerText = Game.puzzles.length;
+                document.getElementById('puzzleBadge').classList.remove('d-none');
             }
 
-            bar.style.width = Math.round(((i+1)/moves.length)*50) + "%"; 
-            text.innerText = `Analyzing: ${i+1}/${moves.length}`;
-        }
+            text.innerText = "Consulting Grandmaster Coach...";
+            document.getElementById('coachDisplay').innerHTML = '<div class="text-center p-3 text-muted"><i class="fa-solid fa-brain fa-spin me-2"></i> Analyzing threats & variations...</div>';
+            bar.className = "progress-bar bg-success progress-bar-striped progress-bar-animated";
+            
+            await Gemini.getCommentary(Game.analysisData, "Custom Game", focus);
+            
+            bar.style.width = "100%";
+            GUI.renderAnalysisList();
 
-        if (Game.puzzles.length > 0) {
-            document.getElementById('puzzleBadge').innerText = Game.puzzles.length;
-            document.getElementById('puzzleBadge').classList.remove('d-none');
-        }
+            // Auto Play First Move on Finish
+            Game.nav('first'); // Reset
+            setTimeout(() => { Game.nav('next'); }, 500);
 
-        text.innerText = "Consulting Grandmaster Coach...";
-        document.getElementById('coachDisplay').innerHTML = '<div class="text-center p-3 text-muted"><i class="fa-solid fa-brain fa-spin me-2"></i> Analyzing threats & variations...</div>';
-        bar.className = "progress-bar bg-success progress-bar-striped progress-bar-animated";
-        
-        await Gemini.getCommentary(Game.analysisData, "Custom Game", focus);
-        
-        bar.style.width = "100%";
-        setTimeout(() => { 
-            progressBox.classList.add('d-none'); 
-            btn.disabled = false;
-            navBtns.forEach(b => b.disabled = false); // Re-enable controls
-            // Auto-play first move after analysis
-            Game.index = -1;
-            Game.nav('next'); 
-        }, 1000);
-        GUI.renderAnalysisList();
+            // Visual Indicator of Done
+            const overlay = document.getElementById('analysisCompleteOverlay');
+            overlay.classList.remove('d-none');
+            setTimeout(() => overlay.classList.add('d-none'), 2000);
+
+        } catch(err) {
+            console.error(err);
+            alert("Analysis failed. See log.");
+        } finally {
+            // ALWAYS re-enable buttons
+            setTimeout(() => { 
+                progressBox.classList.add('d-none'); 
+                btn.disabled = false;
+                navBtns.forEach(b => b.disabled = false); 
+            }, 1000);
+        }
     },
 
     fetchBookData: async function(fen) {
@@ -1663,7 +1702,9 @@ const GUI = {
             }
             display.innerHTML = html;
         } else if (analysisItem) {
-             display.innerHTML = `<strong>${analysisItem.classification}</strong>. ${analysisItem.bestMoveSan ? `Missed <span class="badge bg-success">${analysisItem.bestMoveSan}</span>.` : ''}`;
+             display.innerHTML = `<div><strong>${analysisItem.classification}</strong>. ${analysisItem.bestMoveSan ? `Missed <span class="badge bg-success">${analysisItem.bestMoveSan}</span>.` : ''}</div>
+             <div class="mt-3 text-muted small"><i class="fa-solid fa-microchip"></i> Engine Best: ${analysisItem.bestMoveSan}</div>
+             `;
         }
     },
     
@@ -1768,6 +1809,21 @@ const GUI = {
             this.drawArrow(from, to, '#22c55e');
             this.hintState = 0;
         }
+    },
+    
+    showBestMove: async function() {
+        const fen = Game.getActiveChess().fen();
+        const best = await Engine.getBestMove(fen);
+        if(!best) return;
+        const from = best.substring(0,2);
+        const to = best.substring(2,4);
+        
+        this.clearArrows();
+        this.drawArrow(from, to, '#22c55e');
+        
+        // Highlight square temporarily
+        $('.square-' + from).addClass('highlight-hint');
+        setTimeout(() => $('.square-' + from).removeClass('highlight-hint'), 1500);
     },
     
     resetHint: function() {
