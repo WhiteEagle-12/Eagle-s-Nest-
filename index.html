@@ -22,8 +22,8 @@
         .alpha-d2270 { position: absolute; bottom: 1px; right: 3px; font-size: 11px; line-height: 12px; }
         .numeric-fc462 { position: absolute; top: 2px; left: 2px; font-size: 11px; cursor: default; line-height: 12px; }
         
-        /* App Styles - Permanent Light Mode */
-        body { background-color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; color: #1e1b4b; }
+        /* App Styles (Permanently Light Mode) */
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         .navbar { background: #1e1b4b; color: white; padding: 0.5rem 1rem; border-bottom: 1px solid #334155; flex-shrink: 0; z-index: 20; }
         .navbar-brand { color: white; font-weight: 700; font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; gap: 10px; }
         .main-layout { display: flex; flex: 1; overflow: hidden; position: relative; }
@@ -31,10 +31,10 @@
         .sidebar { width: 320px; background: white; border-right: 1px solid #cbd5e1; display: flex; flex-direction: column; z-index: 10; flex-shrink: 0; transition: margin-left 0.3s ease; }
         .sidebar.collapsed { margin-left: -320px; }
         .sidebar-header { padding: 15px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
-        .game-list, .puzzle-archive-list { flex: 1; overflow-y: auto; background: white;}
-        .game-item, .puzzle-item { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s; font-size: 0.9rem; }
-        .game-item:hover, .puzzle-item:hover { background: #f1f5f9; }
-        .game-item.active, .puzzle-item.active { background: #e0e7ff; border-left: 3px solid #4f46e5; }
+        .game-list { flex: 1; overflow-y: auto; }
+        .game-item { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s; font-size: 0.9rem; }
+        .game-item:hover { background: #f1f5f9; }
+        .game-item.active { background: #e0e7ff; border-left: 3px solid #4f46e5; }
         
         .content-area { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f8fafc; height: 100%; position: relative; }
         
@@ -43,7 +43,6 @@
         .mode-tab:hover { background: #f8fafc; color: #334155; }
         .mode-tab.active { background: #f8fafc; color: #1e1b4b; border-color: #cbd5e1; border-bottom: 1px solid #f8fafc; margin-bottom: -1px; z-index: 2; }
         
-        /* DESKTOP LAYOUT */
         .arena { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 80px 20px 20px; overflow-y: auto; position: relative; min-height: 0; }
         .board-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 10px; position: relative; transition: all 0.3s; z-index: 5; }
         
@@ -68,15 +67,19 @@
         }
         .analysis-moves { 
             flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; position: relative; 
-            min-height: 0; 
+            min-height: 0; /* Fix 2.3: Add min-height: 0 for proper flex sizing */
         }
         .analysis-logs { width: 40%; display: flex; flex-direction: column; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; transition: width 0.3s; }
         .analysis-logs.hidden { display: none !important; }
         .analysis-panel.hidden { display: none !important; }
         
-        /* HIDE MOVE LIST */
-        #analysisListContainer { display: none !important; }
+        #analysisListContainer { flex: none; display: none !important; } /* Hidden as requested */
+        .analysis-mode-hidden { display: none !important; }
 
+        .log-entry { padding: 6px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .log-entry:hover { background: #f8fafc; }
+        .log-entry.active { background: #eef2ff; border-left: 4px solid #6366f1; }
+        
         .move-class { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
         .class-Brilliant { background-color: #1baca6; } .class-Great { background-color: #5c8bb0; } .class-Best { background-color: #96bc4b; } 
         .class-Excellent { background-color: #96bc4b; opacity: 0.8; } .class-Good { background-color: #96bc4b; opacity: 0.6; } 
@@ -84,7 +87,18 @@
         .class-Mistake { background-color: #e6912c; } .class-Blunder { background-color: #fa412d; } .class-Missed { background-color: #ff879c; } 
         .class-Neutral { background-color: #a3a3a3; } 
 
-        .coach-display { padding: 15px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; color: #334155; min-height: 0; flex: 1; overflow-y: auto; position: relative; border-left: 4px solid #cbd5e1; }
+        .coach-display { 
+            padding: 15px; 
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); 
+            border-bottom: 1px solid #e2e8f0; 
+            font-size: 0.95rem; 
+            color: #334155; 
+            min-height: 0; 
+            flex: 1; /* Takes full height in analysis mode */
+            overflow-y: auto; 
+            position: relative; 
+            border-left: 4px solid #cbd5e1; 
+        }
         .coach-display.Brilliant { border-left-color: #1baca6; background: #e0f2f1; } .coach-display.Great { border-left-color: #5c8bb0; background: #e1f5fe; }
         .coach-display.Best { border-left-color: #96bc4b; background: #f1f8e9; } .coach-display.Excellent { border-left-color: #96bc4b; background: #f1f8e9; }
         .coach-display.Good { border-left-color: #96bc4b; background: #f9fbe7; } .coach-display.Book { border-left-color: #d5a47d; background: #fff3e0; }
@@ -109,25 +123,33 @@
         .opacity-50 { opacity: 0.5; pointer-events: none; }
         .wdl-stats { font-size: 0.7rem; color: #64748b; text-align: center; margin-top: 2px; font-family: monospace; }
         
-        /* Draggable Controls (Fixed positioned, initialized via JS) */
+        /* Draggable Controls (Desktop/Default) */
         #verticalAnalysisControls {
-            position: fixed; 
-            
-            /* Default Portrait Layout */
-            display: flex; flex-direction: column; gap: 10px; 
+            position: fixed; /* Changed from absolute */
+            right: 15px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            display: flex; 
+            flex-direction: column; /* Default vertical */
+            gap: 10px; 
             z-index: 2000;
-            background: rgba(255, 255, 255, 0.95); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #cbd5e1;
-            cursor: grab;
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 10px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25); 
+            border: 1px solid #cbd5e1;
+            cursor: grab; /* Indicate draggable */
+            touch-action: none; /* For mobile dragging */
+            transition: none; /* Prevents visual glitches during drag */
         }
-
-        /* Landscape Orientation */
         #verticalAnalysisControls.landscape {
-            flex-direction: row;
+            flex-direction: row; /* Horizontal orientation */
+            transform: none;
+            top: auto !important; /* Managed by JS drag */
+            left: auto !important; /* Managed by JS drag */
+            right: auto !important; /* Managed by JS drag */
+            bottom: auto !important; /* Managed by JS drag */
         }
-        #verticalAnalysisControls.landscape button {
-            margin: 0;
-        }
-
         #verticalAnalysisControls button {
             width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
             border: 1px solid #e2e8f0; background: white; color: #334155;
@@ -157,52 +179,52 @@
         .custom-toast.success { background: #065f46; }
         .custom-toast.error { background: #991b1b; }
 
-        /* MOBILE OPTIMIZATION (Pro Analysis Fix) */
+        /* MOBILE LAYOUT FOR ANALYSIS (Maximized board + scrollable analysis) */
         @media (max-width: 768px) {
             .sidebar { position: absolute; height: 100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
             .sidebar.collapsed { margin-left: -320px; }
-            
-            /* CONTENT AREA: Stack board and analysis vertically */
-            .content-area { flex-direction: column; }
-            
-            /* ARENA: Board + Material + Controls - takes minimum vertical space */
+
+            .content-area { 
+                overflow-y: auto; /* The whole content area scrolls now */
+                height: 100%;
+            }
             .arena { 
-                padding: 5px 5px 10px 5px !important; 
-                flex: 0 0 auto; 
-                height: auto;
+                /* Allow content to flow down to the analysis panel */
+                padding: 10px 5px 5px 5px !important; 
+                overflow-y: visible; 
+                height: auto; 
+                flex: none;
             }
             .board-card { 
                 width: 100% !important; 
-                max-width: 100%; 
-                padding: 5px;
-            }
-            #board-wrapper {
-                max-width: 95vw;
-                aspect-ratio: 1 / 1;
-                margin: 0 auto;
+                max-width: none; 
+                flex-shrink: 0; 
             }
             
-            /* ANALYSIS PANEL: Coach Display - takes remaining height */
+            /* Draggable controls remain visible on mobile */
+            #verticalAnalysisControls { 
+                right: 5px; top: 40%; transform: translateY(-50%); scale: 1; 
+                box-shadow: 0 4px 10px rgba(0,0,0,0.4); 
+            }
+            
+            /* Analysis panel is now stacked below the board and flexible */
             .analysis-panel { 
-                flex: 1; 
-                min-height: 100px;
-                max-height: initial; 
-                border-top: 1px solid #cbd5e1;
-                flex-direction: column;
+                flex: none; 
+                min-height: 200px;
+                max-height: none;
+                margin: 10px 0;
             }
             .analysis-moves {
                 flex: 1;
-                border-right: none;
+                width: 100%;
+                min-height: 200px;
             }
             .coach-display {
+                overflow-y: auto;
                 flex: 1; 
-                min-height: 100px;
-                max-height: initial;
+                min-height: 100px; 
             }
             .analysis-logs { display: none !important; }
-            
-            /* Shrink controls on mobile */
-            #verticalAnalysisControls { scale: 0.9; }
         }
     </style>
 </head>
@@ -215,8 +237,6 @@
         <span class="badge bg-secondary" id="engineStatus">Engine: Init...</span>
     </div>
     <div class="d-flex gap-2">
-        <span class="badge bg-info text-dark" id="dataProfileBadge">Profile: Loading...</span>
-
         <button class="btn btn-sm btn-outline-light" onclick="GUI.toggleSettings()">
             <i class="fa-solid fa-gear"></i>
         </button>
@@ -236,7 +256,7 @@
 <div class="main-layout">
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Search opening..." oninput="renderList()">
+            <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Search opening...">
             <div class="d-flex gap-1">
                 <select class="form-select form-select-sm" id="sortSelect" onchange="renderList()">
                     <option value="recent">Recent</option>
@@ -261,15 +281,16 @@
             <div class="mode-tab" id="tab-puzzles" onclick="GUI.switchTab('puzzles')">
                 <i class="fa-solid fa-puzzle-piece me-1"></i> Smart Puzzles <span id="puzzleBadge" class="badge bg-danger rounded-pill ms-1 d-none">0</span>
             </div>
-             <div class="mode-tab" id="tab-archive" onclick="GUI.switchTab('archive')">
-                <i class="fa-solid fa-box-archive me-1"></i> Puzzle Archive <span id="archiveBadge" class="badge bg-primary rounded-pill ms-1 d-none">0</span>
+            <!-- NEW ARCHIVE TAB -->
+            <div class="mode-tab" id="tab-archive" onclick="GUI.switchTab('archive')">
+                <i class="fa-solid fa-box-archive me-1"></i> Puzzle Archive <span id="archiveBadge" class="badge bg-secondary rounded-pill ms-1">0</span>
             </div>
             <div class="mode-tab" id="tab-play" onclick="GUI.switchTab('play')">
                 <i class="fa-solid fa-robot me-1"></i> Computer Play
             </div>
         </div>
-        
-        <!-- Draggable Controls (Fixed positioned, initialized via JS) -->
+
+        <!-- Draggable Analysis Controls -->
         <div id="verticalAnalysisControls" class="d-none">
             <button onclick="GUI.first()" title="First Move"><i class="fa-solid fa-backward-step"></i></button>
             <button onclick="GUI.prev()" title="Previous Move"><i class="fa-solid fa-chevron-left"></i></button>
@@ -278,105 +299,103 @@
             <div style="height: 1px; background: #e2e8f0; margin: 2px 5px;"></div>
             <button onclick="GUI.showBestMove()" title="Show Best Move" class="text-primary"><i class="fa-solid fa-star"></i></button>
             <button onclick="GUI.flip()" title="Flip Board"><i class="fa-solid fa-retweet"></i></button>
-            <!-- Orientation Toggle is injected here by JS -->
+            <button onclick="GUI.toggleControlsOrientation()" title="Rotate Bar"><i class="fa-solid fa-rotate"></i></button>
         </div>
 
         <div class="arena">
             <div class="board-card" id="boardCard">
                 
-                <!-- PUZZLE ARCHIVE PANEL -->
-                <div id="puzzleArchivePanel" class="d-none w-100 h-100" style="height: 450px !important;">
-                    <div class="sidebar-header d-flex justify-content-between align-items-center bg-light">
-                        <strong>Archived Puzzles</strong>
-                        <button class="btn btn-sm btn-success" onclick="PuzzleArchive.randomize()">
-                            <i class="fa-solid fa-dice me-1"></i> Random Puzzle
-                        </button>
+                <div class="d-flex justify-content-between align-items-center mb-2" id="boardHeaderContainer">
+                    <div id="boardHeaderLeft">
+                        <strong id="gameTitle" class="text-truncate d-block" style="max-width: 250px;">Practice Board</strong>
                     </div>
-                    <div class="puzzle-archive-list" id="puzzleArchiveList">
-                         <div class="p-3 text-center text-muted small">Loading archive...</div>
+                    <div id="puzzleStatusHeader" class="d-none flex-grow-1 text-center">
+                        <span class="badge bg-warning text-dark" id="puzzleCountBadge">Puzzle 0/0</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" id="boardHeaderRight">
+                        <!-- Fullscreen button removed -->
+                        <div class="form-check form-switch m-0 d-none" id="puzzleEngineContainer">
+                            <input class="form-check-input" type="checkbox" id="puzzleVsEngine" onchange="PuzzleManager.toggleEngineMode()">
+                            <label class="form-check-label small fw-bold" for="puzzleVsEngine">Vs Engine</label>
+                        </div>
                     </div>
                 </div>
 
-                <!-- MAIN BOARD PANEL -->
-                <div id="mainBoardPanel">
-                     <div class="d-flex justify-content-between align-items-center mb-2" id="boardHeaderContainer">
-                        <div id="boardHeaderLeft">
-                            <strong id="gameTitle" class="text-truncate d-block" style="max-width: 250px;">Practice Board</strong>
-                        </div>
-                        <div id="puzzleStatusHeader" class="d-none flex-grow-1 text-center">
-                            <span class="badge bg-warning text-dark" id="puzzleCountBadge">Puzzle 0/0</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2" id="boardHeaderRight">
-                            <div class="form-check form-switch m-0 d-none" id="puzzleEngineContainer">
-                                <input class="form-check-input" type="checkbox" id="puzzleVsEngine" onchange="PuzzleManager.toggleEngineMode()">
-                                <label class="form-check-label small fw-bold" for="puzzleVsEngine">Vs Engine</label>
-                            </div>
-                        </div>
+                <div id="board-wrapper">
+                    <div id="board"></div>
+                    <svg id="arrowOverlay"></svg>
+                    <div id="checkmateOverlay" class="checkmate-overlay d-none">
+                        <div class="checkmate-text">CHECKMATE</div>
                     </div>
+                </div>
+                
+                <div id="evalContainer" class="eval-container">
+                    <div class="eval-bar-wrapper" id="evalBar">
+                        <div class="eval-fill" id="evalFill"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted px-1" id="evalTextContainer">
+                        <span id="evalValue">0.00</span>
+                        <span id="wdlValue" class="wdl-stats">Win: 50%</span>
+                    </div>
+                </div>
+                
+                <div class="material-stats" id="materialDisplay">
+                    <div class="mat-side"><span class="mat-label">W Captured:</span><div class="graveyard-w" id="matWhite"></div></div>
+                    <div class="mat-side"><span class="mat-label">B Captured:</span><div class="graveyard-b" id="matBlack"></div></div>
+                </div>
 
-                    <div id="board-wrapper">
-                        <div id="board"></div>
-                        <svg id="arrowOverlay"></svg>
-                        <div id="checkmateOverlay" class="checkmate-overlay d-none">
-                            <div class="checkmate-text">CHECKMATE</div>
-                        </div>
-                    </div>
-                    
-                    <div id="evalContainer" class="eval-container">
-                        <div class="eval-bar-wrapper" id="evalBar">
-                            <div class="eval-fill" id="evalFill"></div>
-                        </div>
-                        <div class="d-flex justify-content-between small text-muted px-1" id="evalTextContainer">
-                            <span id="evalValue">0.00</span>
-                            <span id="wdlValue" class="wdl-stats">Win: 50%</span>
-                        </div>
-                    </div>
-                    
-                    <div class="material-stats" id="materialDisplay">
-                        <div class="mat-side"><span class="mat-label">W Captured:</span><div class="graveyard-w" id="matWhite"></div></div>
-                        <div class="mat-side"><span class="mat-label">B Captured:</span><div class="graveyard-b" id="matBlack"></div></div>
-                    </div>
+                <div id="puzzleFeedback" class="puzzle-feedback d-none"></div>
 
-                    <div id="puzzleFeedback" class="puzzle-feedback d-none"></div>
+                <!-- Analysis Controls (Hidden but ID needed for logic) -->
+                <div id="analysisControls" class="d-none"><div class="control-row"></div></div>
 
-                    <!-- Analysis Controls (Hidden but ID needed for logic) -->
-                    <div id="analysisControls" class="d-none"><div class="control-row"></div></div>
-
-                    <div id="puzzleControls" class="d-none">
-                        <div class="control-row">
-                            <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.prev()" title="Previous Puzzle"><i class="fa-solid fa-chevron-left"></i></button>
-                            <button class="btn btn-sm btn-secondary w-50" onclick="PuzzleManager.skip()">Skip</button>
-                            <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.next()" title="Next Puzzle"><i class="fa-solid fa-chevron-right"></i></button>
-                        </div>
-                        <div class="control-row mt-2">
-                             <button class="btn btn-sm btn-success w-100" onclick="GUI.hint()"><i class="fa-solid fa-lightbulb"></i> Hint</button>
-                        </div>
+                <div id="puzzleControls" class="d-none">
+                    <div class="control-row">
+                        <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.prev()" title="Previous Puzzle"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="btn btn-sm btn-secondary w-50" onclick="PuzzleManager.skip()">Skip</button>
+                        <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.next()" title="Next Puzzle"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
-
-                    <div id="playControls" class="d-none">
-                         <div class="control-row">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="GUI.prev()"><i class="fa-solid fa-chevron-left"></i></button>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="GUI.next()"><i class="fa-solid fa-chevron-right"></i></button>
-                            <button class="btn btn-sm btn-dark" onclick="GUI.flip('play')"><i class="fa-solid fa-retweet"></i> Flip Side</button>
-                        </div>
-                        <div class="control-row">
-                             <button class="btn btn-sm btn-warning w-50" onclick="GUI.undoPlayMove()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
-                             <button class="btn btn-sm btn-danger w-50" onclick="GUI.resetGame()"><i class="fa-solid fa-trash-can"></i> Reset</button>
-                        </div>
-                          <div class="control-row">
-                             <button class="btn btn-sm btn-outline-secondary w-100" onclick="GUI.copyPGN()"><i class="fa-solid fa-copy"></i> PGN</button>
-                        </div>
-                        <div class="mt-3 pt-2 border-top">
-                            <div class="d-flex justify-content-between">
-                                <label class="small fw-bold text-muted">Stockfish Strength</label>
-                                <span class="badge bg-primary" id="eloLabel">ELO: 1200</span>
-                            </div>
-                            <input type="range" class="form-range" min="0" max="20" value="5" id="skillRange" oninput="GUI.updateEloLabel(this.value); Engine.setSkill(this.value)">
-                        </div>
+                    <div class="control-row mt-2">
+                         <button class="btn btn-sm btn-success w-100" onclick="GUI.hint()"><i class="fa-solid fa-lightbulb"></i> Hint</button>
                     </div>
-                </div> <!-- End Main Board Panel -->
+                </div>
+
+                <div id="playControls" class="d-none">
+                      <div class="control-row">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="GUI.prev()"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="GUI.next()"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button class="btn btn-sm btn-dark" onclick="GUI.flip('play')"><i class="fa-solid fa-retweet"></i> Flip Side</button>
+                    </div>
+                    <div class="control-row">
+                         <button class="btn btn-sm btn-warning w-50" onclick="GUI.undoPlayMove()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+                         <button class="btn btn-sm btn-danger w-50" onclick="GUI.resetGame()"><i class="fa-solid fa-trash-can"></i> Reset</button>
+                    </div>
+                      <div class="control-row">
+                         <button class="btn btn-sm btn-outline-secondary w-100" onclick="GUI.copyPGN()"><i class="fa-solid fa-copy"></i> PGN</button>
+                    </div>
+                    <div class="mt-3 pt-2 border-top">
+                        <div class="d-flex justify-content-between">
+                            <label class="small fw-bold text-muted">Stockfish Strength</label>
+                            <span class="badge bg-primary" id="eloLabel">ELO: 1200</span>
+                        </div>
+                        <input type="range" class="form-range" min="0" max="20" value="5" id="skillRange" oninput="GUI.updateEloLabel(this.value); Engine.setSkill(this.value)">
+                    </div>
+                </div>
 
             </div>
+            
+            <!-- NEW PUZZLE ARCHIVE PANEL -->
+            <div id="puzzleArchivePanel" class="d-none board-card" style="max-width: 600px; padding: 20px;">
+                <h5 class="fw-bold">Puzzle Archive (<span id="archiveCount">0</span> Puzzles)</h5>
+                <div class="d-flex gap-2 mb-3">
+                    <button class="btn btn-primary w-50" onclick="ArchiveManager.startRandom()"><i class="fa-solid fa-shuffle"></i> Start Random Puzzle</button>
+                    <button class="btn btn-outline-danger w-50" onclick="ArchiveManager.clearArchive()"><i class="fa-solid fa-trash-can"></i> Clear All</button>
+                </div>
+                <div id="archiveListContainer" style="max-height: 400px; overflow-y: auto;">
+                    <div class="text-center text-muted p-3">No puzzles saved yet.</div>
+                </div>
+            </div>
+
         </div>
 
         <div class="analysis-panel" id="analysisPanel">
@@ -398,7 +417,7 @@
                     </div>
                 </div>
                 
-                <!-- RELATIVE POSITION PROGRESS BAR -->
+                <!-- PROGRESS BAR -->
                 <div class="p-2 bg-light border-bottom d-none" id="scanProgress">
                     <div class="progress" style="height: 5px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
@@ -413,14 +432,14 @@
                     </div>
                 </div>
 
-                <!-- REMOVED: analysisListContainer -->
-                <div id="analysisListContainer" style="display: none;">
-                    <div class="log-container" id="analysisList"></div>
+                <div id="analysisListContainer">
+                     <div class="log-container" id="analysisList">
+                        <div class="text-center text-muted mt-5 small">Select a game to start.</div>
+                    </div>
                 </div>
             </div>
             
             <div class="analysis-logs hidden" id="logPanel">
-                <!-- Log Panel Header with Copy Button -->
                 <div class="p-2 border-bottom border-secondary bg-dark text-white small d-flex justify-content-between align-items-center">
                     <strong>System Log</strong>
                     <button class="btn btn-sm btn-outline-light" style="font-size: 0.7rem; padding: 1px 5px;" onclick="GUI.copyLogs()" title="Copy Logs">
@@ -443,7 +462,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Settings</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="GUI.toggleSettings()"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="form-check form-switch mb-3">
@@ -456,15 +475,9 @@
         </div>
         <hr>
         <div class="mb-3">
-            <label class="form-label small fw-bold">Data Profile ID (UID Override)</label>
-            <input type="text" id="dataProfileIdInput" class="form-control form-control-sm" placeholder="Paste UID Here...">
-            <button class="btn btn-sm btn-success mt-2 w-100" onclick="GUI.updateDataProfile()">Save Profile ID & Reload Data</button>
-            <div class="small text-muted mt-2">Current Active ID: <span id="currentActiveDataId">...</span></div>
-        </div>
-        <div class="mb-3">
             <label class="form-label small fw-bold">Gemini API Key</label>
             <input type="password" id="apiKeyInput" class="form-control form-control-sm" placeholder="Paste Key Here...">
-            <button class="btn btn-sm btn-outline-primary mt-2" onclick="localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); GUI.showToast('API Key Saved!', 'success')">Save Key</button>
+            <button class="btn btn-sm btn-outline-primary mt-2" onclick="localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); alert('Key Saved!')">Save Key</button>
         </div>
       </div>
     </div>
@@ -496,50 +509,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<script type="module">
-// --- FIREBASE IMPORTS ---
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, query, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+<script>
 // --- CONFIG ---
 const STOCKFISH_URL = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
 const MODEL_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
 const apiKey = ""; 
 
-// --- FIREBASE GLOBALS ---
-let app, db, auth;
-let authUserId = null; // The secure Firebase authenticated UID
-let activeDataUserId = null; // The ID currently used for Firestore paths (can be overridden)
-let gamesUnsubscribe = null;
-let puzzlesUnsubscribe = null;
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-const isFirebaseActive = !!firebaseConfig;
-
 /**
  * UTILITIES
  */
-window.sys_logs = []; 
+window.sys_logs = []; // Fix 3.1: Initialize persistent log array
 function log(msg, type = 'INFO') {
     const box = document.getElementById('sysLog');
     const now = new Date();
     const time = now.toLocaleTimeString().split(' ')[0];
     
+    // Fix 3.1: Store in persistent log
     window.sys_logs.push({ timestamp: now.toISOString(), type: type, message: msg });
     
     const div = document.createElement('div');
     
+    // Fix 3.1: Apply color based on type
     let color = '#4ade80'; // INFO (green)
     if (type === 'ERROR') color = '#f87171'; // Red
     else if (type === 'WARN') color = '#facc15'; // Yellow
     
     div.innerHTML = `<span style="color: ${color};">[${type}]</span> [${time}] ${msg}`;
     div.className = 'log-line'; 
-    if (box) {
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-    }
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
 }
 
 function getEffectiveKey() {
@@ -597,6 +595,7 @@ const Engine = {
     runScan: function(fen) {
         return new Promise(resolve => {
             if(!this.isReady) {
+                // If engine failed to load, return immediate neutral eval
                 resolve({ eval: "0.00", bestMove: "-", pv: "", wdl: null });
                 return;
             }
@@ -630,7 +629,7 @@ const Engine = {
             
             this.worker.postMessage('stop');
             this.worker.postMessage(`position fen ${fen}`);
-            this.worker.postMessage('go depth 12'); 
+            this.worker.postMessage('go depth 12'); // Fixed depth for scanning
         });
     },
 
@@ -661,7 +660,7 @@ const Engine = {
     
     analyze: function(fen) {
         if(!this.isReady) return;
-        this.worker.postMessage('stop');
+        this.worker.postMessage('stop'); // Stop any lingering analysis
         this.worker.postMessage(`position fen ${fen}`);
         this.worker.postMessage('go depth 14');
         
@@ -697,22 +696,24 @@ const Engine = {
     playResponse: function(fen) {
           if(!this.isReady) return;
           
-          // FIX: Increased watchdog time from 3s to 8s
+          this.worker.postMessage('stop'); // CRITICAL FIX: Stop any concurrent analysis
+          
+          // Fix 1.4: Watchdog Timer
           const watchdog = setTimeout(() => {
-              log("WARN: Engine timed out (8s). Forcing stop and reset.", 'WARN');
+              log("WARN: Engine timed out (3s). Forcing stop and reset.", 'WARN');
               this.worker.removeEventListener('message', listener);
               this.worker.postMessage('stop');
-              this.worker.postMessage('ucinewgame'); 
+              this.worker.postMessage('ucinewgame'); // Soft reset
+              // Re-enable user interaction if it was waiting for the engine
               document.getElementById('boardCard').classList.remove('opacity-50');
-          }, 8000); 
+          }, 3000); 
 
-          this.worker.postMessage('stop');
           this.worker.postMessage(`position fen ${fen}`);
-          this.worker.postMessage('go movetime 1000'); 
+          this.worker.postMessage('go movetime 1500'); // Increased movetime for stability
           
           const listener = (e) => {
               if(e.data.startsWith('bestmove')) {
-                  clearTimeout(watchdog); 
+                  clearTimeout(watchdog); // Clear watchdog on successful move
                   const best = e.data.split(' ')[1];
                   this.worker.removeEventListener('message', listener);
                   Game.engineMove(best);
@@ -762,6 +763,7 @@ const HeatMap = {
         const turn = chess.turn();
         const opp = turn === 'w' ? 'b' : 'w';
         
+        // Detailed attack map: Square -> List of Pieces (e.g. 'e4' -> ['n', 'q'])
         const myDefenses = this.getDetailedAttacks(chess, turn); 
         const oppAttacks = this.getDetailedAttacks(chess, opp); 
 
@@ -784,8 +786,8 @@ const HeatMap = {
                     const defCount = defenders.length;
 
                     if (atkCount > 0) {
-                        const atkStr = attackers.map(p => p.toUpperCase()).join(', '); 
-                        const defStr = defenders.map(p => p.toUpperCase()).join(', '); 
+                        const atkStr = attackers.join(', ');
+                        const defStr = defenders.join(', ');
                         
                         let status = "Safe";
                         if (defCount === 0) {
@@ -876,7 +878,7 @@ You are a Grandmaster Chess Coach.
 For every move, I have provided:
 1. The Move & Engine Best Move.
 2. **Tactical Radar:** This gives you a heatmap of EXACTLY who is attacking and defending each piece.
-   - Example: "N at f3: Attacked by 2 (Q, R), Defended by 1 (P). Status: OVERWHELMED".
+   - Example: "N at f3: Attacked by 2 (q, r), Defended by 1 (p). Status: OVERWHELMED".
 3. **Principal Variation (PV):** The future moves the engine predicts.
 
 **CRITICAL INSTRUCTIONS:**
@@ -939,234 +941,47 @@ ${logStr}
 };
 
 /**
- * FIREBASE / PUZZLE ARCHIVE MANAGEMENT
- */
-const PuzzleArchive = {
-    data: [], // Stores all archived puzzles
-    currentPuzzle: null,
-    LOCAL_KEY: 'local_puzzles',
-
-    // Firestore Integration for Puzzles
-    loadFromStorage: function() {
-        if (!activeDataUserId) return;
-        
-        if (isFirebaseActive) {
-            if (puzzlesUnsubscribe) puzzlesUnsubscribe(); 
-
-            const userPuzzlesRef = collection(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`);
-            const q = query(userPuzzlesRef);
-
-            puzzlesUnsubscribe = onSnapshot(q, (snapshot) => {
-                this.data = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                document.getElementById('archiveBadge').innerText = this.data.length;
-                document.getElementById('archiveBadge').classList.toggle('d-none', this.data.length === 0);
-                this.renderList();
-                log(`Loaded ${this.data.length} archived puzzles for profile: ${activeDataUserId.substring(0, 8)}...`);
-            }, (error) => {
-                log("Firestore Puzzle Snapshot Error: " + error.message, 'ERROR');
-            });
-        } else {
-            // LocalStorage Fallback
-            this.data = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
-            document.getElementById('archiveBadge').innerText = this.data.length;
-            document.getElementById('archiveBadge').classList.toggle('d-none', this.data.length === 0);
-            this.renderList();
-            log(`Loaded ${this.data.length} archived puzzles from LocalStorage.`);
-        }
-    },
-    
-    savePuzzle: async function(puzzle) {
-        if (!activeDataUserId) { log("Cannot save puzzle: No active user profile.", 'ERROR'); return; }
-        const puzzleId = puzzle.id.toString();
-
-        if (isFirebaseActive && db) {
-            const puzzleRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`, puzzleId);
-            await setDoc(puzzleRef, puzzle);
-        } else {
-            // LocalStorage Fallback
-            const puzzles = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
-            puzzles.push({ ...puzzle, id: puzzleId });
-            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(puzzles));
-            this.loadFromStorage(); // Refresh UI
-        }
-    },
-
-    deletePuzzle: async function(id) {
-        if (!activeDataUserId) { log("Cannot delete puzzle: No active user profile.", 'ERROR'); return; }
-
-        if (isFirebaseActive && db) {
-            const puzzleRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`, id.toString());
-            await deleteDoc(puzzleRef);
-            GUI.showToast("Puzzle deleted.", "success");
-        } else {
-            // LocalStorage Fallback
-            let puzzles = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
-            puzzles = puzzles.filter(p => p.id.toString() !== id.toString());
-            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(puzzles));
-            this.loadFromStorage(); // Refresh UI
-            GUI.showToast("Puzzle deleted.", "success");
-        }
-    },
-    
-    // UI Rendering and Logic
-    renderList: function() {
-        const list = document.getElementById('puzzleArchiveList');
-        list.innerHTML = "";
-        if (this.data.length === 0) {
-            list.innerHTML = '<div class="p-3 text-center text-muted small">No puzzles saved yet. Analyze a game to generate some!</div>';
-            return;
-        }
-
-        this.data.forEach(p => {
-            const div = document.createElement('div');
-            div.className = "puzzle-item rounded d-flex justify-content-between align-items-center";
-            // REMOVED TRASH BUTTON
-            div.innerHTML = `
-                <div onclick="PuzzleArchive.loadPuzzle('${p.id}')">
-                    <div class="fw-bold">FEN: ${p.fen.split(' ')[0]}</div>
-                    <div class="small text-muted">Solution: ${p.solution.substring(0, 4)}... • Turn: ${p.color.toUpperCase()} • Difficulty: ${p.difficulty}</div>
-                </div>
-            `;
-            list.appendChild(div);
-        });
-    },
-
-    loadPuzzle: function(id) {
-        const puzzle = this.data.find(p => p.id.toString() === id.toString());
-        if (puzzle) {
-            Game.puzzles = [puzzle];
-            PuzzleManager.currentIdx = 0;
-            
-            GUI.switchTab('puzzles');
-            GUI.showToast("Puzzle loaded from Archive.", "success");
-        }
-    },
-    
-    randomize: function() {
-        if (this.data.length === 0) {
-            GUI.showToast("No puzzles in archive to randomize.", "error");
-            return;
-        }
-        const randomIdx = Math.floor(Math.random() * this.data.length);
-        const randomPuzzle = this.data[randomIdx];
-        this.loadPuzzle(randomPuzzle.id);
-    }
-}
-
-
-/**
  * GAME LOGIC
  */
 const Game = {
-    data: [], 
+    data: [],
     
+    // TWO Separate Board States
     analysisChess: new Chess(),
     playChess: new Chess(),
     
     history: [],
     index: -1,
     userColor: 'w',
-    playUserColor: 'w', 
-    playViewIndex: -1, 
+    playUserColor: 'w', // Current user color in Computer Play
+    playViewIndex: -1, // Index for viewing history in Play mode (-1 is live)
     analysisData: [], 
-    puzzles: [], 
+    currentPuzzles: [], // Puzzles generated for current game. (Renamed from Game.puzzles)
+    puzzleArchive: JSON.parse(localStorage.getItem('chess_puzzles') || '[]'), // Persistent storage
     mode: 'analysis',
-    selectedSquare: null, 
-    LOCAL_KEY: 'local_games',
-
+    selectedSquare: null, // For Tap-to-Move
     
-    // FIREBASE / LOCAL STORAGE PERSISTENCE FUNCTIONS
-    saveGame: async function(game) {
-        if (!activeDataUserId) { log("Cannot save: No active user profile.", 'ERROR'); return; }
-        const gameId = game.id.toString(); 
-
-        if (isFirebaseActive && db) {
-            const gameRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`, gameId);
-            await setDoc(gameRef, { ...game, id: gameId }); 
-            log(`Game saved to Firestore: ${game.opening} (${gameId})`);
-        } else {
-            // LocalStorage Fallback
-            const games = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
-            const existingIndex = games.findIndex(g => g.id.toString() === gameId);
-            if (existingIndex > -1) {
-                games[existingIndex] = { ...game, id: gameId };
-            } else {
-                games.push({ ...game, id: gameId });
-            }
-            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(games));
-            this.loadFromStorage(); // Re-trigger load to update list immediately
-            log(`Game saved to LocalStorage: ${game.opening}`);
-        }
+    // STORAGE
+    save: function() {
+        localStorage.setItem('chess_games', JSON.stringify(this.data));
     },
-
-    deleteGame: async function(id) {
-        if (!activeDataUserId) { log("Cannot delete: No active user profile.", 'ERROR'); return; }
-
-        if (isFirebaseActive && db) {
-            const gameRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`, id.toString());
-            await deleteDoc(gameRef);
-            GUI.showToast("Game deleted.", "success");
-        } else {
-            // LocalStorage Fallback
-            let games = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
-            games = games.filter(g => g.id.toString() !== id.toString());
-            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(games));
-            this.loadFromStorage(); // Re-trigger load to update list immediately
-            GUI.showToast("Game deleted.", "success");
-        }
+    
+    saveArchive: function() {
+        localStorage.setItem('chess_puzzles', JSON.stringify(this.puzzleArchive));
     },
 
     loadFromStorage: function() {
-        if (!activeDataUserId) return;
-        
-        if (isFirebaseActive) {
-            if (gamesUnsubscribe) gamesUnsubscribe(); 
-
-            const userGamesRef = collection(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`);
-            const q = query(userGamesRef);
-
-            gamesUnsubscribe = onSnapshot(q, (snapshot) => {
-                Game.data = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                
-                Game.data.sort((a,b) => b.id.localeCompare(a.id)); 
-                renderList();
-                log(`Loaded ${Game.data.length} games for profile: ${activeDataUserId.substring(0, 8)}...`);
-
-                if (Game.data.length > 0 && Game.index === -1) {
-                    Game.load(Game.data[0].id);
-                } else if (Game.data.length === 0) {
-                    document.getElementById('gameList').innerHTML = '<div class="p-3 text-center text-muted small">Upload CSV or PGN to load games</div>';
-                }
-            }, (error) => {
-                log("Firestore Snapshot Error: " + error.message, 'ERROR');
-            });
-            
-            // Load puzzle archive data
-            PuzzleArchive.loadFromStorage();
-        } else {
-            // LocalStorage Fallback
-            Game.data = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
-            Game.data.sort((a,b) => b.id.localeCompare(a.id)); 
+        const d = localStorage.getItem('chess_games');
+        if(d) {
+            this.data = JSON.parse(d);
             renderList();
-            log(`Loaded ${Game.data.length} games from LocalStorage.`);
-            if (Game.data.length > 0 && Game.index === -1) {
-                Game.load(Game.data[0].id);
-            } else if (Game.data.length === 0) {
-                document.getElementById('gameList').innerHTML = '<div class="p-3 text-center text-muted small">Upload CSV or PGN to load games</div>';
-            }
-            PuzzleArchive.loadFromStorage(); // Load puzzles from local storage
         }
     },
 
-    // GAME LOGIC CONTINUES
+    // Helper to get active instance
     getActiveChess: function() {
         if (this.mode === 'play') {
+             // If viewing history, we need to load a temp board state
              if (this.playViewIndex !== -1) {
                  const temp = new Chess();
                  const history = this.playChess.history({ verbose: true });
@@ -1187,7 +1002,7 @@ const Game = {
     },
 
     load: function(id) {
-        const g = this.data.find(x => x.id.toString() === id.toString());
+        const g = this.data.find(x => x.id === id);
         if(!g) return;
         
         log(`Loading Game ID ${id}...`);
@@ -1198,7 +1013,7 @@ const Game = {
         if(!success) success = this.analysisChess.load_pgn(g.pgn);
         
         if(!success) {
-            log("ERROR: PGN Parse Failed. Make sure PGN is valid.", 'ERROR');
+            log("ERROR: PGN Parse Failed.", 'ERROR');
             return;
         }
         
@@ -1209,10 +1024,12 @@ const Game = {
         document.getElementById('scanBtn').disabled = false;
         
         this.analysisData = [];
-        this.puzzles = [];
+        this.currentPuzzles = []; // Reset current puzzles
         Gemini.comments = {};
         
-        document.getElementById('puzzleBadge').innerText = "0";
+        GUI.renderAnalysisList();
+        GUI.resetCoachDisplay();
+        
         document.getElementById('puzzleBadge').classList.add('d-none');
         document.getElementById('board').classList.remove('opacity-50');
 
@@ -1234,8 +1051,10 @@ const Game = {
     move: function(from, to, prom) {
         const chess = this.getActiveChess();
         
+        // Block move if we are in play mode history review
         if (this.mode === 'play' && this.playViewIndex !== -1) return false;
         
+        // Strict legality check handled by chess.js move() returning null on invalid move
         const move = chess.move({ from: from, to: to, promotion: prom || 'q' });
         
         if(move) {
@@ -1245,8 +1064,8 @@ const Game = {
                 Engine.analyze(chess.fen());
             } 
             else if (this.mode === 'play') {
-                this.playViewIndex = -1; 
-                GUI.board.position(this.playChess.fen()); 
+                this.playViewIndex = -1; // Reset view index on new move
+                GUI.board.position(this.playChess.fen()); // Ensure visual is live board
                 GUI.update();
                 if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
                 
@@ -1269,9 +1088,8 @@ const Game = {
         const prom = bestMoveUci.length > 4 ? bestMoveUci.substring(4,5) : 'q';
         
         this.playChess.move({ from: from, to: to, promotion: prom });
-        GUI.board.position(this.playChess.fen()); 
+        GUI.board.position(this.playChess.fen()); // Use direct board pos set for speed/sync
         GUI.update();
-        document.getElementById('boardCard').classList.remove('opacity-50'); 
         if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
         Engine.analyze(this.playChess.fen());
     },
@@ -1287,23 +1105,25 @@ const Game = {
         } else if (dir === 'prev') {
             this.playViewIndex = Math.max(-1, this.playViewIndex - 1);
         } else if (dir === 'first') {
-            this.playViewIndex = -1; 
+            this.playViewIndex = -1; // Index -1 means viewing the live position
         } else if (dir === 'last') {
             this.playViewIndex = lastMoveIndex;
         }
 
+        // Reconstruct FEN
         const tempChess = new Chess();
         if (this.playViewIndex >= 0) {
             for (let i = 0; i <= this.playViewIndex; i++) {
                 tempChess.move(history[i].san);
             }
             GUI.board.position(tempChess.fen());
+            // Disable input when reviewing history
             document.getElementById('boardCard').classList.add('opacity-50');
-            Engine.stop();
-            GUI.updateEval(0, null);
         } else {
+            // Index -1 means viewing the live position
             GUI.board.position(this.playChess.fen());
             document.getElementById('boardCard').classList.remove('opacity-50');
+            // Re-analyze live position if back to live play
             Engine.analyze(this.playChess.fen());
         }
         GUI.clearArrows();
@@ -1353,7 +1173,7 @@ const Scanner = {
         const navBtns = document.querySelectorAll('#verticalAnalysisControls button');
 
         if (!Game.history || Game.history.length === 0) {
-            GUI.showToast("No moves to analyze! Load a game first.", "error");
+            GUI.showToast("No moves to analyze!", "error");
             return;
         }
 
@@ -1367,7 +1187,7 @@ const Scanner = {
         
         try {
             Game.analysisData = []; 
-            Game.puzzles = []; 
+            Game.currentPuzzles = []; // Using currentPuzzles
             
             const moves = Game.history;
             const tempChess = new Chess();
@@ -1422,11 +1242,12 @@ const Scanner = {
                     scoreAfter = this.parseEval(postMoveResult.eval);
                 }
 
+                let evalLoss = (moveObj.color === 'w') ? scoreBefore - scoreAfter : scoreAfter - scoreBefore;
+                if (moveObj.color === 'b') evalLoss = -evalLoss;
+                let cls = "Neutral";
                 let loss = 0;
                 if (moveObj.color === 'w') loss = scoreBefore - scoreAfter;
                 else loss = scoreAfter - scoreBefore;
-                
-                let cls = "Neutral";
                 
                 if (isBook) cls = "Book";
                 else if (isMate) cls = "Best";
@@ -1444,7 +1265,7 @@ const Scanner = {
                     else cls = "Best"; 
                 }
                 
-                const analysisItem = {
+                const data = {
                     san: moveObj.san, color: moveObj.color,
                     eval: evAfterStr, 
                     evalDiff: loss.toFixed(2),
@@ -1457,26 +1278,26 @@ const Scanner = {
                     tactics: tacticalSnapshot
                 };
 
-                Game.analysisData.push(analysisItem);
+                Game.analysisData.push(data);
                 
                 if ((cls === 'Blunder' || cls === 'Mistake' || cls === 'Missed') && moveObj.color === Game.userColor) {
-                    const newPuzzle = { 
-                        id: Date.now().toString() + i, 
-                        fen: fenBefore, 
-                        color: moveObj.color, 
-                        solution: preMoveResult.bestMove,
-                        difficulty: cls 
-                    };
-                    Game.puzzles.push(newPuzzle);
-                    PuzzleArchive.savePuzzle(newPuzzle); 
+                    const puzzle = { fen: fenBefore, color: moveObj.color, solution: preMoveResult.bestMove, date: Date.now() };
+                    Game.currentPuzzles.push(puzzle);
+                    // Add to permanent archive if unique
+                    const exists = Game.puzzleArchive.some(p => p.fen === puzzle.fen && p.solution === puzzle.solution);
+                    if (!exists) {
+                        Game.puzzleArchive.push(puzzle);
+                        Game.saveArchive();
+                        GUI.updateArchiveCount();
+                    }
                 }
 
                 bar.style.width = Math.round(((i+1)/moves.length)*50) + "%"; 
                 text.innerText = `Analyzing: ${i+1}/${moves.length}`;
             }
 
-            if (Game.puzzles.length > 0) {
-                document.getElementById('puzzleBadge').innerText = Game.puzzles.length;
+            if (Game.currentPuzzles.length > 0) {
+                document.getElementById('puzzleBadge').innerText = Game.currentPuzzles.length;
                 document.getElementById('puzzleBadge').classList.remove('d-none');
             }
 
@@ -1487,11 +1308,12 @@ const Scanner = {
             await Gemini.getCommentary(Game.analysisData, "Custom Game", focus);
             
             bar.style.width = "100%";
+            GUI.renderAnalysisList();
 
             Game.nav('first'); 
             setTimeout(() => { Game.nav('next'); }, 600);
 
-            GUI.showToast("Analysis Complete. Puzzles saved to Archive.", "success");
+            GUI.showToast("Analysis Complete", "success");
 
         } catch(err) {
             console.error(err);
@@ -1557,15 +1379,15 @@ const PuzzleManager = {
         } else {
             feedback.innerHTML = '';
             if(this.activePuzzle) {
-                Game.analysisChess.load(this.activePuzzle.fen); 
+                Game.analysisChess.load(this.activePuzzle.fen); // Use analysisChess as temp for puzzle board display
                 GUI.board.position(this.activePuzzle.fen);
             }
         }
     },
 
     loadPuzzles: function() {
-        if (Game.puzzles.length === 0) {
-            document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No puzzles loaded. Analyze a game or check the Archive.</span>`;
+        if (Game.currentPuzzles.length === 0) {
+            document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No puzzles loaded. Scan a game or load from archive.</span>`;
             document.getElementById('board').classList.add('opacity-50');
             return;
         }
@@ -1576,14 +1398,13 @@ const PuzzleManager = {
     },
 
     showPuzzle: function(idx) {
-        if (Game.puzzles.length === 0) return;
-        if (idx >= Game.puzzles.length) {
+        if (idx >= Game.currentPuzzles.length) {
             document.getElementById('puzzleFeedback').innerHTML = `<span class="text-primary fw-bold">Training Complete!</span>`;
             return;
         }
         
         this.currentIdx = idx;
-        this.activePuzzle = Game.puzzles[idx];
+        this.activePuzzle = Game.currentPuzzles[idx];
         
         Game.analysisChess.load(this.activePuzzle.fen);
         GUI.board.position(this.activePuzzle.fen);
@@ -1591,7 +1412,7 @@ const PuzzleManager = {
         GUI.clearArrows();
         GUI.updateMaterial(); 
         
-        document.getElementById('puzzleCountBadge').innerText = `Puzzle ${idx + 1}/${Game.puzzles.length}`;
+        document.getElementById('puzzleCountBadge').innerText = `Puzzle ${idx + 1}/${Game.currentPuzzles.length}`;
         document.getElementById('puzzleFeedback').innerHTML = "";
     },
 
@@ -1653,10 +1474,7 @@ const PuzzleManager = {
     onSuccess: function() {
         document.getElementById('board').classList.add('puzzle-success');
         document.getElementById('puzzleFeedback').innerHTML = `<span class="text-correct"><i class="fa-solid fa-check"></i> Correct!</span>`;
-        setTimeout(() => {
-            document.getElementById('board').classList.remove('puzzle-success');
-            if (!this.vsEngine) this.next(); 
-        }, 500);
+        setTimeout(() => document.getElementById('board').classList.remove('puzzle-success'), 500);
     },
 
     onFail: function() {
@@ -1673,8 +1491,7 @@ const PuzzleManager = {
     },
 
     next: function() {
-        if (this.currentIdx < Game.puzzles.length - 1) this.showPuzzle(this.currentIdx + 1);
-        else GUI.showToast("Last puzzle completed!", "success");
+        if (this.currentIdx < Game.currentPuzzles.length - 1) this.showPuzzle(this.currentIdx + 1);
     },
     
     prev: function() {
@@ -1682,7 +1499,66 @@ const PuzzleManager = {
     },
     
     skip: function() {
-        if (this.currentIdx < Game.puzzles.length - 1) this.showPuzzle(this.currentIdx + 1);
+        if (this.currentIdx < Game.currentPuzzles.length - 1) this.showPuzzle(this.currentIdx + 1);
+    }
+};
+
+/**
+ * ARCHIVE MANAGER
+ */
+const ArchiveManager = {
+    startRandom: function() {
+        if (Game.puzzleArchive.length === 0) {
+            GUI.showToast("Archive is empty!", "error");
+            return;
+        }
+        // Shuffle and load the whole archive into currentPuzzles for training
+        Game.currentPuzzles = [...Game.puzzleArchive].sort(() => Math.random() - 0.5);
+        GUI.switchTab('puzzles');
+    },
+
+    clearArchive: function() {
+        // Changed alert to custom modal/confirm replacement
+        if(window.confirm("Are you sure you want to delete ALL saved puzzles?")) {
+            Game.puzzleArchive = [];
+            Game.saveArchive();
+            this.renderList();
+            GUI.updateArchiveCount();
+            GUI.showToast("Puzzle archive cleared.", "success");
+        }
+    },
+
+    renderList: function() {
+        const list = document.getElementById('archiveListContainer');
+        list.innerHTML = "";
+        if (Game.puzzleArchive.length === 0) {
+            list.innerHTML = '<div class="text-center text-muted p-3">No puzzles saved yet.</div>';
+            return;
+        }
+        
+        Game.puzzleArchive.slice().reverse().forEach((p, i) => { // Reverse to show newest first
+            const date = new Date(p.date).toLocaleDateString();
+            const div = document.createElement('div');
+            div.className = 'p-2 border-bottom d-flex justify-content-between align-items-center cursor-pointer';
+            div.style.transition = 'background 0.1s';
+            div.onmouseover = () => div.style.background = '#f8fafc';
+            div.onmouseout = () => div.style.background = 'white';
+
+            div.innerHTML = `
+                <div class="small">
+                    <strong>${i + 1}. FEN:</strong> ${p.fen.split(' ')[0]}
+                    <div class="text-muted" style="font-size: 0.8rem;">Solution: ${p.solution} (${p.color === 'w' ? 'White' : 'Black'} to move)</div>
+                </div>
+                <span class="badge bg-light text-muted">${date}</span>
+            `;
+            // Set up click handler to load this specific puzzle
+            div.onclick = () => {
+                Game.currentPuzzles = [p];
+                GUI.switchTab('puzzles');
+                GUI.showToast("Loaded puzzle from archive.", "success");
+            }
+            list.appendChild(div);
+        });
     }
 };
 
@@ -1694,55 +1570,8 @@ const GUI = {
     settingsModal: null,
     hintState: 0, 
     showEvalInPlay: true,
-    xOffset: 0, // For draggable controls persistence
-    yOffset: 0, // For draggable controls persistence
     
     init: function() {
-        const savedOverrideId = localStorage.getItem('activeDataUserId');
-
-        if (isFirebaseActive) {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    authUserId = user.uid;
-                    log(`Firebase: Authenticated as ${authUserId.substring(0, 8)}...`);
-                    
-                    if (savedOverrideId) {
-                        activeDataUserId = savedOverrideId;
-                        log(`Using saved profile ID: ${activeDataUserId.substring(0, 8)}...`);
-                    } else {
-                        activeDataUserId = authUserId;
-                    }
-                } else {
-                    try {
-                        log("Firebase: Attempting sign-in...");
-                        if (typeof __initial_auth_token !== 'undefined') {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (e) {
-                        log("Firebase Auth Error: " + e.message, 'ERROR');
-                        activeDataUserId = 'unauthenticated_user';
-                    }
-                }
-                
-                // Finalize setup after auth attempt
-                if (!activeDataUserId) activeDataUserId = authUserId || 'unauthenticated_user';
-                document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...`;
-                Game.loadFromStorage();
-            });
-        } else {
-            // LOCAL STORAGE FALLBACK
-            log("Firebase config not found. Using Local Storage fallback.", 'WARN');
-            activeDataUserId = 'local_profile';
-            document.getElementById('dataProfileBadge').innerText = `Profile: Local`;
-            Game.loadFromStorage();
-        }
-        
         this.board = Chessboard('board', {
             draggable: true,
             position: 'start',
@@ -1751,28 +1580,23 @@ const GUI = {
                 Game.selectedSquare = null;
                 $('.square-55d63').removeClass('highlight-selected');
 
-                if (Game.mode === 'analysis' || Game.mode === 'archive') return false; 
-                if (Game.mode === 'play' && Game.playViewIndex !== -1) return false; 
+                if (Game.mode === 'analysis' || (Game.mode === 'play' && Game.playViewIndex !== -1)) return false; 
                 
                 const chess = Game.getActiveChess();
                 const turnColor = chess.turn(); 
                 const pieceColor = p.charAt(0); 
                 
-                if (Game.mode === 'play' || Game.mode === 'puzzles') {
-                    if (pieceColor !== Game.playUserColor && Game.mode === 'play') return false;
-                    if (chess.turn() !== pieceColor) return false; 
-                    if (chess.game_over()) return false;
+                if (Game.mode === 'play') {
+                    if (pieceColor !== Game.playUserColor || chess.turn() !== Game.playUserColor || chess.game_over()) return false;
                 }
 
                 if (turnColor !== pieceColor) return false;
                 return true;
             },
             onDrop: async (src, tgt) => {
-                if (src === tgt) return;
-                
-                if (Game.mode === 'play' && Game.playViewIndex !== -1) return 'snapback';
+                if (src === tgt || (Game.mode === 'play' && Game.playViewIndex !== -1)) return 'snapback';
 
-                if (Game.mode === 'puzzles' || Game.mode === 'archive') {
+                if (Game.mode === 'puzzles') {
                     return await PuzzleManager.handleDrop(src, tgt);
                 } else {
                     const res = Game.move(src, tgt);
@@ -1791,7 +1615,6 @@ const GUI = {
         window.addEventListener('resize', () => {
              this.board.resize();
              if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
-             if (Game.mode === 'analysis') this.positionControls(); 
         });
         
         Engine.init();
@@ -1802,166 +1625,95 @@ const GUI = {
         if(k) document.getElementById('apiKeyInput').value = k;
         
         this.showEvalInPlay = document.getElementById('showEvalToggle').checked;
+        Game.loadFromStorage();
         this.updateEloLabel(5);
-        
-        this.setupDraggableControls();
-        
-        // Initial Positioning
-        setTimeout(() => { 
-            this.positionControls(); 
-        }, 500); 
+        this.updateArchiveCount(); // Update archive count on load
+        this.setupDragControls(); // Setup draggable analysis controls
 
-        // Mobile Init
         if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
     },
     
-    positionControls: function() {
-        const controls = document.getElementById('verticalAnalysisControls');
-        if (!controls || Game.mode !== 'analysis') return;
-
-        const boardCard = document.getElementById('boardCard');
-        const boardRect = boardCard.getBoundingClientRect();
-        const controlsRect = controls.getBoundingClientRect();
-        
-        // Target position: 10px to the right of the board card
-        let targetLeft = boardRect.right + 10;
-        
-        // Fallback to internal positioning if external space is too small (e.g., small screens)
-        if (targetLeft + controlsRect.width > window.innerWidth) {
-             targetLeft = boardRect.right - controlsRect.width - 15;
-        }
-
-        // Use saved Y position, centered vertically on the board if none saved.
-        const savedPos = JSON.parse(localStorage.getItem('controlPos') || '{}');
-        let targetTop = savedPos.y !== undefined ? savedPos.y : (boardRect.top + boardRect.height / 2) - (controlsRect.height / 2);
-
-        // Update position variables for drag continuation
-        GUI.xOffset = targetLeft;
-        GUI.yOffset = targetTop;
-        
-        // Apply new position
-        controls.style.left = targetLeft + 'px';
-        controls.style.top = targetTop + 'px';
-        controls.style.right = 'initial'; 
-        controls.style.bottom = 'initial';
-    },
-
-    setupDraggableControls: function() {
+    // NEW: Drag and Orientation for Controls
+    setupDragControls: function() {
         const controls = document.getElementById('verticalAnalysisControls');
         let isDragging = false;
-        let currentX, currentY, initialX, initialY;
+        let offset = { x: 0, y: 0 };
 
-        controls.style.position = 'fixed'; 
-        controls.style.cursor = 'grab';
-        
-        const savedPos = JSON.parse(localStorage.getItem('controlPos') || '{}');
-
-        if (savedPos.x !== undefined) {
-            GUI.xOffset = savedPos.x;
-            GUI.yOffset = savedPos.y;
-            controls.style.left = GUI.xOffset + 'px';
-            controls.style.top = GUI.yOffset + 'px';
-        }
-
-        if (savedPos.orientation === 'landscape') {
-            controls.classList.add('landscape');
-        }
-
-        const dragStart = (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'I' || e.target.tagName === 'DIV' && e.target.style.height === '1px') return;
-            
+        const startDrag = (e) => {
+            // Prevent dragging if the user clicked a button
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return; 
             isDragging = true;
             controls.style.cursor = 'grabbing';
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
 
+            // Ensure we are using explicit positioning (left/top) instead of right/transform
+            // when starting to drag, especially if the element was in its default position.
             const rect = controls.getBoundingClientRect();
-            GUI.xOffset = rect.left; // Update offset based on current screen position
-            GUI.yOffset = rect.top;
+            controls.style.left = `${rect.left}px`;
+            controls.style.top = `${rect.top}px`;
+            controls.style.right = 'auto'; 
+            controls.style.bottom = 'auto';
+            controls.style.transform = 'none';
 
-            if (e.type === "touchstart") {
-                initialX = e.touches[0].clientX - GUI.xOffset;
-                initialY = e.touches[0].clientY - GUI.yOffset;
-            } else {
-                initialX = e.clientX - GUI.xOffset;
-                initialY = e.clientY - GUI.yOffset;
-                e.preventDefault(); 
-            }
+            offset = {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
         };
 
-        const drag = (e) => {
+        const onDrag = (e) => {
             if (!isDragging) return;
+            e.preventDefault();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            let newX = clientX - offset.x;
+            let newY = clientY - offset.y;
+            
+            const viewportW = window.innerWidth;
+            const viewportH = window.innerHeight;
+            const controlW = controls.offsetWidth;
+            const controlH = controls.offsetHeight;
 
-            if (e.type === "touchmove") {
-                currentX = e.touches[0].clientX - initialX;
-                currentY = e.touches[0].clientY - initialY;
-            } else {
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
-            }
+            // Constrain position to viewport
+            newX = Math.max(0, Math.min(newX, viewportW - controlW));
+            newY = Math.max(0, Math.min(newY, viewportH - controlH));
 
-            GUI.xOffset = currentX;
-            GUI.yOffset = currentY;
-
-            controls.style.left = currentX + 'px';
-            controls.style.top = currentY + 'px';
+            controls.style.left = `${newX}px`;
+            controls.style.top = `${newY}px`;
         };
 
-        const dragEnd = () => {
-            if (!isDragging) return;
+        const endDrag = () => {
             isDragging = false;
             controls.style.cursor = 'grab';
-            
-            localStorage.setItem('controlPos', JSON.stringify({
-                x: GUI.xOffset,
-                y: GUI.yOffset,
-                orientation: controls.classList.contains('landscape') ? 'landscape' : 'portrait'
-            }));
         };
 
-        controls.addEventListener('mousedown', dragStart);
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-        controls.addEventListener('touchstart', dragStart);
-        document.addEventListener('touchmove', drag);
-        controls.addEventListener('touchend', dragEnd);
+        controls.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('mouseup', endDrag);
 
-        const toggleBtn = document.createElement('button');
-        toggleBtn.innerHTML = '<i class="fa-solid fa-arrows-left-right"></i>';
-        toggleBtn.title = 'Toggle Orientation';
-        toggleBtn.onclick = (e) => {
-            e.stopPropagation();
+        controls.addEventListener('touchstart', startDrag);
+        document.addEventListener('touchmove', onDrag, { passive: false });
+        document.addEventListener('touchend', endDrag);
+
+        GUI.toggleControlsOrientation = function() {
             controls.classList.toggle('landscape');
-            dragEnd(); 
-            // Re-center vertically after flip if orientation changes from auto-positioned state
-            if (Game.mode === 'analysis') GUI.positionControls();
+            // Force a slight reposition after changing orientation to recalculate center
+            setTimeout(() => { GUI.board.resize(); }, 50);
         };
-
-        const separator = controls.querySelector('div[style*="height: 1px"]');
-        if (separator) {
-            controls.appendChild(toggleBtn);
-            controls.insertBefore(toggleBtn, separator.nextSibling); 
-        } else {
-            controls.appendChild(toggleBtn);
-        }
     },
 
-
     handleSquareClick: function(square) {
-        if (Game.mode === 'analysis' || Game.mode === 'archive') return; 
-        if (Game.mode === 'play' && Game.playViewIndex !== -1) return; 
+        if (Game.mode === 'analysis' || (Game.mode === 'play' && Game.playViewIndex !== -1) || Game.getActiveChess().game_over()) return; 
 
         const chess = Game.getActiveChess();
         const turn = chess.turn();
         const piece = chess.get(square);
         
-        if (chess.game_over()) return; 
-
-        // State 1: Select Piece
         if (!Game.selectedSquare) {
             if (piece && piece.color === turn) {
-                if (Game.mode === 'play' || Game.mode === 'puzzles') {
-                     if (piece.color !== Game.playUserColor && Game.mode === 'play') return;
-                     if (chess.turn() !== piece.color) return; 
-                }
+                if (Game.mode === 'play' && (piece.color !== Game.playUserColor || chess.turn() !== Game.playUserColor)) return;
                 
                 Game.selectedSquare = square;
                 $('.square-55d63').removeClass('highlight-selected');
@@ -1970,7 +1722,6 @@ const GUI = {
             return;
         }
 
-        // State 2: Move or Reselect
         const source = Game.selectedSquare;
         
         if (source === square) {
@@ -1980,8 +1731,7 @@ const GUI = {
         }
 
         if (piece && piece.color === turn) {
-             if (Game.mode === 'play' && piece.color !== Game.playUserColor) {
-             } else {
+             if (Game.mode !== 'play' || piece.color === Game.playUserColor) {
                  Game.selectedSquare = square;
                  $('.square-55d63').removeClass('highlight-selected');
                  $('.square-' + square).addClass('highlight-selected');
@@ -1989,20 +1739,20 @@ const GUI = {
              }
         }
 
-        // Attempt Move
-        if (Game.mode === 'puzzles' || Game.mode === 'archive') {
+        if (Game.mode === 'puzzles') {
              PuzzleManager.handleDrop(source, square).then(res => {
-                 if (res !== 'snapback') {
-                     GUI.board.position(Game.analysisChess.fen());
-                 }
+                 if (res !== 'snapback') GUI.board.position(Game.analysisChess.fen());
              });
         } else {
-            Game.move(source, square);
+            const success = Game.move(source, square);
+            if (!success) {
+                Game.selectedSquare = null;
+                $('.square-55d63').removeClass('highlight-selected');
+            } else {
+                Game.selectedSquare = null;
+                $('.square-55d63').removeClass('highlight-selected');
+            }
         }
-        
-        // Clear selection regardless of success for tap-to-move
-        Game.selectedSquare = null;
-        $('.square-55d63').removeClass('highlight-selected');
     },
     
     showToast: function(message, type = 'success') {
@@ -2028,39 +1778,10 @@ const GUI = {
         document.getElementById('eloLabel').innerText = `ELO: ~${elo}`;
     },
 
-    toggleSettings: function() {
-        document.getElementById('dataProfileIdInput').value = activeDataUserId === 'local_profile' ? '' : activeDataUserId;
-        document.getElementById('currentActiveDataId').innerText = activeDataUserId;
-        this.settingsModal.show(); 
-    },
-
-    updateDataProfile: function() {
-        const newId = document.getElementById('dataProfileIdInput').value.trim();
-        
-        let targetId = newId;
-
-        if (!isFirebaseActive) {
-            targetId = 'local_profile';
-        } else if (!newId) {
-            targetId = authUserId;
-        }
-
-        if (targetId && targetId !== activeDataUserId) {
-            activeDataUserId = targetId;
-            localStorage.setItem('activeDataUserId', targetId);
-            document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...${!isFirebaseActive ? ' (Local)' : (newId ? ' (Override)' : '')}`;
-            document.getElementById('currentActiveDataId').innerText = activeDataUserId;
-            Game.loadFromStorage();
-            GUI.showToast(`Profile switched to ${activeDataUserId.substring(0, 8)}... Reloading data.`, "success");
-        } else if (!newId && isFirebaseActive) {
-             activeDataUserId = authUserId;
-             localStorage.removeItem('activeDataUserId');
-             document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...`;
-             document.getElementById('currentActiveDataId').innerText = activeDataUserId;
-             Game.loadFromStorage();
-             GUI.showToast("Profile reset to authenticated user.", "success");
-        }
-        this.settingsModal.hide();
+    updateArchiveCount: function() {
+        const count = Game.puzzleArchive.length;
+        document.getElementById('archiveCount').innerText = count;
+        document.getElementById('archiveBadge').innerText = count;
     },
 
     switchTab: function(mode) {
@@ -2076,9 +1797,6 @@ const GUI = {
         document.getElementById('board').classList.remove('opacity-50');
         document.querySelectorAll('.mode-tab').forEach(el => el.classList.remove('active'));
         
-        const mainBoardPanel = document.getElementById('mainBoardPanel');
-        const puzzleArchivePanel = document.getElementById('puzzleArchivePanel');
-
         if (mode === 'analysis') document.getElementById('tab-analysis').classList.add('active');
         else if (mode === 'puzzles') document.getElementById('tab-puzzles').classList.add('active');
         else if (mode === 'archive') document.getElementById('tab-archive').classList.add('active');
@@ -2090,21 +1808,27 @@ const GUI = {
         const analysisIds = ['analysisControls', 'analysisPanel', 'scanBtn', 'verticalAnalysisControls'];
         const puzzleIds = ['puzzleControls', 'puzzleStatusHeader', 'puzzleFeedback', 'puzzleEngineContainer'];
         const playIds = ['playControls'];
+        const archiveIds = ['puzzleArchivePanel'];
 
         const hideAll = (ids) => ids.forEach(id => document.getElementById(id)?.classList.add('d-none'));
         const showAll = (ids) => ids.forEach(id => document.getElementById(id)?.classList.remove('d-none'));
         
-        hideAll(analysisIds); hideAll(puzzleIds); hideAll(playIds);
+        hideAll(analysisIds); hideAll(puzzleIds); hideAll(playIds); hideAll(archiveIds);
         document.getElementById('analysisPanel').classList.add('hidden'); 
-        mainBoardPanel.classList.remove('d-none');
-        puzzleArchivePanel.classList.add('d-none');
         
+        const analysisListContainer = document.getElementById('analysisListContainer');
+        const coachDisplay = document.getElementById('coachDisplay');
+
         const header = document.getElementById('boardHeaderContainer');
 
         if (mode === 'analysis') {
             header.classList.add('d-none');
-            showAll(['analysisPanel', 'scanBtn', 'verticalAnalysisControls']); 
+            showAll(['analysisPanel', 'scanBtn', 'verticalAnalysisControls']);
             document.getElementById('analysisPanel').classList.remove('hidden');
+            
+            // REMOVE MOVELIST & EXPAND COACH DISPLAY
+            analysisListContainer.classList.add('d-none'); 
+            coachDisplay.style.flex = '1';
             
             Game.analysisChess.reset();
             for(let i=0; i<=Game.index; i++) {
@@ -2114,18 +1838,22 @@ const GUI = {
             this.update(); 
             this.board.orientation(Game.userColor === 'b' ? 'black' : 'white');
             document.getElementById('gameTitle').innerText = "Game Analysis";
-            setTimeout(() => this.positionControls(), 100);
         } 
         else if (mode === 'puzzles') {
             header.classList.remove('d-none'); 
             showAll(puzzleIds);
             PuzzleManager.loadPuzzles();
-            document.getElementById('gameTitle').innerText = "Tactical Puzzles";
+             document.getElementById('gameTitle').innerText = "Tactical Puzzles";
+             analysisListContainer.classList.remove('d-none');
+             coachDisplay.style.flex = 'none';
         }
         else if (mode === 'archive') {
-            header.classList.add('d-none');
-            mainBoardPanel.classList.add('d-none');
-            puzzleArchivePanel.classList.remove('d-none');
+            header.classList.remove('d-none');
+            showAll(archiveIds);
+            ArchiveManager.renderList();
+            document.getElementById('gameTitle').innerText = "Puzzle Archive";
+            analysisListContainer.classList.remove('d-none');
+            coachDisplay.style.flex = 'none';
         }
         else if (mode === 'play') {
             header.classList.remove('d-none');
@@ -2134,11 +1862,14 @@ const GUI = {
             this.update(); 
             this.board.orientation(Game.playUserColor === 'w' ? 'white' : 'black');
             document.getElementById('gameTitle').innerText = "Vs Stockfish";
+            analysisListContainer.classList.remove('d-none');
+            coachDisplay.style.flex = 'none';
         }
         this.updateMaterial();
         setTimeout(() => this.board.resize(), 100);
     },
     
+    toggleSettings: function() { this.settingsModal.show(); },
     toggleLogs: function(show) { document.getElementById('logPanel').classList.toggle('hidden', !show); },
     toggleEvalBar: function(show) { 
         this.showEvalInPlay = show;
@@ -2156,15 +1887,15 @@ const GUI = {
 
     toggleSidebar: function() {
         document.getElementById('sidebar').classList.toggle('collapsed');
-        setTimeout(() => {
-            this.board.resize();
-            if (Game.mode === 'analysis') this.positionControls(); 
-        }, 300);
+        setTimeout(() => this.board.resize(), 300);
     },
 
+    // GUI.toggleFullscreen removed
+
+    // Play Mode Features
     flip: function(mode) {
         if (mode === 'play') {
-            Engine.stop(); 
+            Engine.stop();
             
             Game.playUserColor = Game.playUserColor === 'w' ? 'b' : 'w';
             this.board.orientation(Game.playUserColor === 'w' ? 'white' : 'black');
@@ -2182,22 +1913,23 @@ const GUI = {
     },
 
     resetGame: function() {
-        Game.playChess.reset();
-        Game.playUserColor = 'w';
-        Game.playViewIndex = -1; 
-        this.board.orientation('white');
-        document.getElementById('checkmateOverlay').classList.add('d-none');
-        document.getElementById('boardCard').classList.remove('opacity-50'); 
-        GUI.update();
-        Engine.analyze(Game.playChess.fen());
-        GUI.showToast("New game started!", "success");
+        if(confirm("Start new game?")) {
+            Game.playChess.reset();
+            Game.playUserColor = 'w';
+            Game.playViewIndex = -1;
+            this.board.orientation('white');
+            document.getElementById('checkmateOverlay').classList.add('d-none');
+            document.getElementById('boardCard').classList.remove('opacity-50'); 
+            GUI.update();
+            Engine.analyze(Game.playChess.fen());
+        }
     },
 
     undoPlayMove: function() {
         Game.playChess.undo(); 
         Game.playChess.undo(); 
-        Game.playViewIndex = -1; 
-        document.getElementById('boardCard').classList.remove('opacity-50'); 
+        Game.playViewIndex = -1;
+        document.getElementById('boardCard').classList.remove('opacity-50');
         GUI.update();
         Engine.analyze(Game.playChess.fen());
     },
@@ -2210,7 +1942,7 @@ const GUI = {
         this.updateMaterial();
         this.updateEvalDisplayVisibility(); 
         
-        if (Game.mode !== 'analysis') {
+        if (Game.mode === 'puzzles' || Game.mode === 'play') {
             if(Game.mode === 'play' && Game.playViewIndex === -1) {
                  Engine.analyze(Game.playChess.fen()); 
             }
@@ -2244,7 +1976,7 @@ const GUI = {
     },
     
     updateMaterial: function() {
-        const chess = Game.mode === 'puzzles' || Game.mode === 'archive' ? Game.analysisChess : Game.getActiveChess();
+        const chess = Game.mode === 'puzzles' ? Game.analysisChess : Game.getActiveChess();
         const board = chess.board();
         
         const fullSet = { p:8, n:2, b:2, r:2, q:1, k:1 };
@@ -2291,7 +2023,7 @@ const GUI = {
             if(cp > 0) valText = "+" + valText;
             let val = Math.max(-500, Math.min(500, cp));
             pct = 50 + (val / 10);
-            winPct = 100 / (1 + Math.pow(10, -(cp / 400)));
+            winPct = 50 + (50 * (2 / (1 + Math.exp(-0.004 * cp)) - 1));
         }
         
         document.getElementById('evalValue').innerText = valText;
@@ -2299,6 +2031,37 @@ const GUI = {
         document.getElementById('wdlValue').innerText = `Win: ${Math.round(winPct)}%`;
     },
 
+    renderAnalysisList: function() {
+        // This function is still needed for puzzle mode if the user wants to jump to a specific move
+        const list = document.getElementById('analysisList');
+        list.innerHTML = "";
+        Game.analysisData.forEach((d, i) => {
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            div.id = `log-${i}`;
+            div.onclick = () => {
+                Game.analysisChess.reset();
+                for(let k=0; k<=i; k++) Game.analysisChess.move(Game.history[k].san);
+                Game.index = i;
+                GUI.update();
+                Engine.analyze(Game.analysisChess.fen());
+                GUI.clearArrows();
+            };
+            const moveNum = Math.ceil((i + 1) / 2) + (d.color === 'w' ? '.' : '...');
+            
+            div.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <span class="text-muted small me-2" style="width:25px">${moveNum}</span> 
+                    <strong>${d.san}</strong>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <span class="small text-muted">${d.eval}</span>
+                    <span class="move-class class-${d.classification}">${d.classification}</span>
+                </div>`;
+            list.appendChild(div);
+        });
+    },
+    
     hint: async function() {
         const fen = Game.getActiveChess().fen();
         const best = await Engine.getBestMove(fen);
@@ -2351,28 +2114,7 @@ const GUI = {
         const start = getCoords(from);
         const end = getCoords(to);
         const svg = document.getElementById('arrowOverlay');
-        const markerId = 'reusableArrowHead'; 
-        
-        let defs = svg.querySelector('defs');
-        if (!defs) {
-            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            svg.appendChild(defs);
-
-            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-            marker.setAttribute('id', markerId);
-            marker.setAttribute('markerWidth', '4');
-            marker.setAttribute('markerHeight', '4');
-            marker.setAttribute('refX', '2');
-            marker.setAttribute('refY', '2');
-            marker.setAttribute('orient', 'auto');
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', 'M0,0 L4,2 L0,4 Z');
-            marker.appendChild(path);
-            defs.appendChild(marker);
-        }
-        
-        defs.querySelector(`#${markerId} path`).setAttribute('fill', color);
-        
+        const id = `arrow-${from}-${to}`;
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', start.x);
         line.setAttribute('y1', start.y);
@@ -2381,23 +2123,27 @@ const GUI = {
         line.setAttribute('stroke', color);
         line.setAttribute('stroke-width', sqSize * 0.15);
         line.setAttribute('opacity', '0.7');
-        line.setAttribute('marker-end', `url(#${markerId})`); 
-        
+        line.setAttribute('marker-end', `url(#head-${id})`);
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        marker.setAttribute('id', `head-${id}`);
+        marker.setAttribute('markerWidth', '4');
+        marker.setAttribute('markerHeight', '4');
+        marker.setAttribute('refX', '2');
+        marker.setAttribute('refY', '2');
+        marker.setAttribute('orient', 'auto');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M0,0 L4,2 L0,4 Z');
+        path.setAttribute('fill', color);
+        marker.appendChild(path);
+        defs.appendChild(marker);
+        svg.appendChild(defs);
         svg.appendChild(line);
     },
     
     clearArrows: function() {
         const svg = document.getElementById('arrowOverlay');
-        const defs = svg.querySelector('defs');
-
-        let child = svg.lastChild;
-        while (child) {
-            const prev = child.previousSibling;
-            if (child !== defs) {
-                svg.removeChild(child);
-            }
-            child = prev;
-        }
+        while(svg.lastChild) svg.removeChild(svg.lastChild);
     },
     
     next: () => Game.nav('next'), prev: () => Game.nav('prev'), first: () => Game.nav('first'), last: () => Game.nav('last'),
@@ -2451,102 +2197,55 @@ const GUI = {
 function importManualPGN() {
     const pgn = document.getElementById('pgnText').value;
     if(!pgn) return;
-    const gameId = Date.now().toString(); 
-    const newGame = { id: gameId, date: new Date().toISOString().substring(0, 10), opening: "Custom PGN", result: '?', accuracy: 0, pgn: pgn, oppRating: 0, userColor: 'white' };
-    
-    Game.saveGame(newGame); 
-
+    const newGame = { id: Date.now(), date: '-', opening: "Custom PGN", result: '?', accuracy: 0, pgn: pgn, oppRating: '?', userColor: 'white' };
+    Game.data.unshift(newGame);
+    Game.save();
+    renderList();
     document.getElementById('pgnModal').style.display='none';
     document.getElementById('pgnModal').classList.remove('show');
-    GUI.showToast("PGN imported. Loading game...", "success");
+    Game.load(newGame.id);
 }
-
 document.getElementById('csvInput').onchange = (e) => { if(e.target.files.length) parseFile(e.target.files[0]); };
 function parseFile(file) {
-    GUI.showToast("Parsing CSV, please wait...", "info");
     Papa.parse(file, { header: true, skipEmptyLines: true, complete: (res) => {
-        const newData = res.data.map((r, i) => {
-            const gameId = Date.now().toString() + i;
-            return {
-                id: gameId, 
-                date: r.date || new Date().toISOString().substring(0, 10), 
-                opening: r.opening || 'Unknown Game ' + i,
-                result: r.result || '-', 
-                accuracy: parseFloat(r.userAccuracy) || 0,
-                pgn: r.pgn || "", 
-                oppRating: parseInt(r.opponentRating) || 0,
-                userColor: (r.userColor || 'white').toLowerCase()
-            };
-        });
-        
-        newData.forEach(g => Game.saveGame(g));
-        GUI.showToast(`${newData.length} games imported successfully.`, "success");
+        const newData = res.data.map((r, i) => ({
+            id: i, date: r.date || '-', opening: r.opening || 'Unknown',
+            result: r.result || '-', accuracy: parseFloat(r.userAccuracy) || 0,
+            pgn: r.pgn || "", oppRating: parseInt(r.opponentRating) || 0,
+            userColor: (r.userColor || 'white').toLowerCase()
+        }));
+        // Use a high ID to ensure new games appear at the top
+        const baseId = Date.now();
+        newData.forEach((game, index) => game.id = baseId + index);
+
+        Game.data = [...newData, ...Game.data];
+        Game.save();
+        renderList();
     }});
 }
-
 function renderList() {
-    const list = document.getElementById('gameList'); 
-    list.innerHTML = "";
+    const list = document.getElementById('gameList'); list.innerHTML = "";
     let arr = [...Game.data];
     const sort = document.getElementById('sortSelect').value;
-    const search = document.getElementById('searchBox').value.toLowerCase();
     
-    // Filter
-    if (search) {
-        arr = arr.filter(g => g.opening.toLowerCase().includes(search));
-    }
-    
-    // Sort
-    if(sort === 'recent') arr.sort((a,b) => b.id.localeCompare(a.id));
-    else if(sort === 'oldest') arr.sort((a,b) => a.id.localeCompare(b.id));
+    if(sort === 'recent') arr.sort((a,b) => b.id - a.id);
+    else if(sort === 'oldest') arr.sort((a,b) => a.id - b.id);
     else if(sort === 'acc_high') arr.sort((a,b) => b.accuracy - a.accuracy);
     else if(sort === 'acc_low') arr.sort((a,b) => a.accuracy - b.accuracy);
     else if(sort === 'elo_high') arr.sort((a,b) => b.oppRating - a.oppRating);
     else if(sort === 'elo_low') arr.sort((a,b) => a.oppRating - b.oppRating);
 
-    if (arr.length === 0) {
-        list.innerHTML = `<div class="p-3 text-center text-muted small">No games found matching criteria.</div>`;
-        return;
-    }
-
     arr.forEach(g => {
-        const div = document.createElement('div'); 
-        div.className = "game-item rounded"; 
-        div.id = "g-" + g.id;
-        const colorClass = g.result==='win'?'text-success':(g.result==='loss'?'text-danger':'text-muted');
-        div.innerHTML = `
-            <div class="d-flex justify-content-between fw-bold">
-                <span class="text-truncate" style="max-width:180px">${g.opening}</span>
-                <span class="${colorClass}">${g.result.toUpperCase()}</span>
-            </div>
-            <div class="game-meta small text-muted">Acc: ${g.accuracy}% • Vs ${g.oppRating} • Color: ${g.userColor}</div>
-            <div class="mt-1 d-flex justify-content-end">
-                <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); Game.deleteGame('${g.id}')" title="Delete Game">
-                    <i class="fa-solid fa-trash-can fa-xs"></i>
-                </button>
-            </div>
-        `;
-        div.onclick = () => {
-            document.querySelectorAll('.game-item').forEach(el => el.classList.remove('active'));
-            div.classList.add('active');
-            Game.load(g.id)
-        }; 
+        const div = document.createElement('div'); div.className = "game-item"; div.id = "g-" + g.id;
+        div.onclick = () => Game.load(g.id); 
+        div.innerHTML = `<div class="d-flex justify-content-between fw-bold"><span class="text-truncate" style="max-width:180px">${g.opening}</span><span class="${g.result==='win'?'text-success':(g.result==='loss'?'text-danger':'text-muted')}">${g.result}</span></div><div class="game-meta">Acc: ${g.accuracy}% • Vs ${g.oppRating}</div>`;
         list.appendChild(div);
     });
 }
-
 window.onload = function() { 
     GUI.init();
     GUI.switchTab('analysis');
 };
-
-// --- FIX: Expose module-defined objects to the global window scope for HTML onclick handlers ---
-window.GUI = GUI;
-window.PuzzleManager = PuzzleManager;
-window.Scanner = Scanner;
-window.PuzzleArchive = PuzzleArchive; // Expose new object
-window.importManualPGN = importManualPGN; // Expose global function
-window.renderList = renderList; // Expose global function
 </script>
 </body>
 </html>
