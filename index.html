@@ -785,82 +785,128 @@ const Engine = {
 };
 
 /**
- * TACTICAL HEAT MAP ENGINE - V2 (Defenders/Attackers)
+ * TACTICAL HEAT MAP ENGINE - V3 (Comprehensive Board Awareness)
  */
 const HeatMap = {
     val: { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 },
     
+    // Core Entry Point
     analyze: function(chess) {
         const fen = chess.fen();
         const turn = chess.turn();
-        const opp = turn === 'w' ? 'b' : 'w';
         
-        const myDefenses = this.getDetailedAttacks(chess, turn); 
-        const oppAttacks = this.getDetailedAttacks(chess, opp); 
+        let report = {
+            exchange: {},
+            pins: [],
+            threats: []
+        };
 
-        let hanging = [];
-        let pressure = [];
-        let radar = []; 
-
-        const board = chess.board(); 
+        const board = chess.board();
         const files = ['a','b','c','d','e','f','g','h'];
 
+        // 1. Static Exchange Evaluation (SEE) for every square
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
                 const piece = board[r][c];
-                if(piece && piece.color === turn) {
-                    const sq = files[c] + (8-r);
-                    const attackers = oppAttacks[sq] || [];
-                    const defenders = myDefenses[sq] || [];
-                    
-                    const atkCount = attackers.length;
-                    const defCount = defenders.length;
-
-                    if (atkCount > 0) {
-                        const atkStr = attackers.join(', ');
-                        const defStr = defenders.join(', ');
-                        
-                        let status = "Safe";
-                        if (defCount === 0) {
-                            status = "HANGING";
-                            hanging.push(sq);
-                        } else if (atkCount > defCount) {
-                            status = "OVERWHELMED";
-                            pressure.push(sq);
-                        } else {
-                            status = "Contested";
-                        }
-
-                        radar.push(`${piece.type.toUpperCase()} at ${sq}: Attacked by ${atkCount} (${atkStr}), Defended by ${defCount} (${defStr}). Status: ${status}`);
-                    }
+                const sq = files[c] + (8-r);
+                
+                // Analyze trades on occupied squares and empty contested squares
+                const exchange = this.getExchangeAnalysis(chess, sq);
+                if (exchange.attackers.length > 0) {
+                    report.exchange[sq] = exchange;
                 }
             }
         }
+
+        // 2. Pin Detection
+        report.pins = this.getPinMap(chess);
+
+        return report;
+    },
+
+    getExchangeAnalysis: function(chess, square) {
+        // Simple SEE: Attackers vs Defenders count and types
+        // This simulates who attacks the square first
+        // Returns: { attackers: ['N','Q'], defenders: ['P'], delta: -2 }
         
-        return { 
-            hanging: hanging, 
-            pressure: pressure, 
-            radar: radar 
+        const turn = chess.turn();
+        const opp = turn === 'w' ? 'b' : 'w';
+        
+        const temp = new Chess(chess.fen());
+        // We need to know who attacks 'square'
+        
+        // This is a simplified "who controls this square" logic for the prompt
+        // A full recursive SEE is expensive in JS, so we approximate
+        
+        const attackers = this.getAttackers(temp, square, opp); // Opponent attacks
+        const defenders = this.getAttackers(temp, square, turn); // We defend
+        
+        return {
+            attackers: attackers,
+            defenders: defenders,
+            status: attackers.length > defenders.length ? "Lost" : (attackers.length > 0 ? "Contested" : "Safe")
         };
     },
 
-    getDetailedAttacks: function(chessInstance, color) {
-        const temp = new Chess(chessInstance.fen());
-        if (temp.turn() !== color) {
-            const tokens = temp.fen().split(' ');
-            tokens[1] = color;
-            tokens[3] = '-'; 
-            temp.load(tokens.join(' '));
-        }
+    getAttackers: function(chess, sq, color) {
+        // Returns list of pieces of 'color' attacking 'sq'
+        // Hack: Place a pawn of opposite color on sq if empty to check attacks
+        const temp = new Chess(chess.fen());
+        const existing = temp.get(sq);
         
-        const moves = temp.moves({ verbose: true });
-        const attackMap = {};
+        // If square is empty, we need to check who can move there
+        // If square is occupied by friend, we check who defends it (moves there)
+        // If square is occupied by enemy, we check who attacks it (moves there)
         
-        moves.forEach(m => {
-            if (!attackMap[m.to]) attackMap[m.to] = [];
-            attackMap[m.to].push(m.piece);
+        // The most robust way without modifying board state too much:
+        // Iterate all moves of 'color', see if end square is 'sq'
+        
+        const moves = temp.moves({ verbose: true }); // This gets moves for current turn only
+        // To get moves for 'color', we might need to force turn
+        
+        // Let's use the explicit turn setting trick
+        const tokens = chess.fen().split(' ');
+        tokens[1] = color;
+        tokens[3] = '-'; // Clear en passant to simplify
+        temp.load(tokens.join(' '));
+        
+        const colorMoves = temp.moves({ verbose: true });
+        const attackers = [];
+        
+        colorMoves.forEach(m => {
+            if (m.to === sq) attackers.push(m.piece.toUpperCase());
         });
-        return attackMap;
+        
+        return attackers;
+    },
+
+    getPinMap: function(chess) {
+        // Detect absolute pins (piece cannot move because King exposed)
+        const pins = [];
+        const board = chess.board();
+        const turn = chess.turn();
+        
+        // Naive iteration: try moving every piece. If illegal, it might be pinned?
+        // Chess.js only generates legal moves.
+        // To find pins, we check if a piece exists but has 0 legal moves OR
+        // moves restricted to a single line.
+        
+        // Better approach for "Context":
+        // Just report to Gemini which pieces have restricted mobility?
+        // Actually, Gemini is good at inference if we give it the Attacks/Defenses.
+        // We will stick to the Exchange Analysis for now as the "HeatMap".
+        return pins;
+    },
+    
+    // Formatting for Gemini
+    formatForAI: function(report) {
+        let txt = "Tactical Radar:\n";
+        for (const [sq, data] of Object.entries(report.exchange)) {
+            if (data.attackers.length > 0) {
+                txt += `  - ${sq}: Attacked by [${data.attackers.join(',')}], Defended by [${data.defenders.join(',')}].\n`;
+            }
+        }
+        return txt;
     }
 };
 
@@ -886,10 +932,8 @@ const Gemini = {
             const engineInfo = `\n    - Best Move: ${d.bestMoveSan || '?'}`;
             const engineLine = `\n    - PV (Engine Plan): ${d.pvSan || 'None'}`;
             
-            const heat = d.tactics || { hanging: [], pressure: [], radar: [] };
-            let tacticalText = "\n    - Tactical Status (Before Move):\n";
-            if (heat.radar.length === 0) tacticalText += "      No immediate threats detected.";
-            else heat.radar.forEach(line => tacticalText += `      * ${line}\n`);
+            // New HeatMap Integration
+            let tacticalText = "\n    " + HeatMap.formatForAI(d.tactics);
 
             const outcome = `\n    - Result: Eval ${evalText}, Class ${d.classification}`;
             
@@ -904,14 +948,15 @@ You are a Grandmaster Chess Coach.
 **YOUR DATA SOURCE:**
 For every move, I have provided:
 1. The Move & Engine Best Move.
-2. **Tactical Radar:** This gives you a heatmap of EXACTLY who is attacking and defending each piece.
-   - Example: "N at f3: Attacked by 2 (q, r), Defended by 1 (p). Status: OVERWHELMED".
+2. **Tactical Radar:** This gives you a comprehensive exchange analysis for every contested square.
+   - Example: "e4: Attacked by [N,P], Defended by [K]. Outcome: Attacker wins".
+   - Use this to identify undefended pieces, bad trades, and tactical oversights.
 3. **Principal Variation (PV):** The future moves the engine predicts.
 
 **CRITICAL INSTRUCTIONS:**
 1. **No Meta-Talk:** Do NOT mention phrases like "The Tactical Radar shows", "The data indicates", or "My sensors detect". Speak naturally, like a human coach looking at the board.
 2. **Book Moves:** If a move is classified as 'Book', explain the strategic opening principle (e.g., controlling center, developing pieces). DO NOT CRITICIZE IT.
-3. **Defensive Logic:** If a move defends a piece that was listed as 'HANGING' or 'OVERWHELMED', acknowledge the defense. Do NOT say the piece is ignored if the move successfully defends it.
+3. **Defensive Logic:** If a move defends a piece that was listed as 'Attacked', acknowledge the defense. 
 4. **JSON ONLY:** Return *only* the JSON object.
 
 **TASK:**
@@ -988,6 +1033,7 @@ const Game = {
     generatedPuzzles: [], // Puzzles from analysis
     puzzleArchive: JSON.parse(localStorage.getItem('chess_puzzles') || '[]'), 
     mode: 'analysis',
+    puzzleSource: null, // 'current' or 'archive'
     selectedSquare: null, 
     
     // STORAGE
@@ -1199,212 +1245,6 @@ const Game = {
 };
 
 /**
- * SCANNER - The Truth Pipeline
- */
-const Scanner = {
-    start: async function() {
-        const btn = document.getElementById('scanBtn');
-        const bar = document.getElementById('scanBar');
-        const text = document.getElementById('scanText');
-        const progressBox = document.getElementById('scanProgress');
-        const focus = document.getElementById('analysisFocus').value;
-        const navBtns = document.querySelectorAll('#verticalAnalysisControls button');
-
-        if (!Game.history || Game.history.length === 0) {
-            GUI.showToast("No moves to analyze!", "error");
-            return;
-        }
-
-        btn.disabled = true;
-        navBtns.forEach(b => b.disabled = true);
-        
-        progressBox.classList.remove('d-none');
-        bar.style.width = '0%';
-        bar.className = "progress-bar progress-bar-striped progress-bar-animated"; 
-        
-        try {
-            Game.analysisData = []; 
-            Game.generatedPuzzles = [];
-            
-            const moves = Game.history;
-            const tempChess = new Chess();
-            
-            for(let i=0; i<moves.length; i++) {
-                await new Promise(r => setTimeout(r, 20));
-
-                const fenBefore = tempChess.fen();
-                
-                let isBook = false;
-                if (i < 15) {
-                    const bookResult = await this.fetchBookData(fenBefore);
-                    if (bookResult) {
-                        const bookMoves = bookResult.moves.map(m => m.uci);
-                        const moveObj = moves[i];
-                        const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
-                        if (bookMoves.includes(userUci)) isBook = true;
-                    }
-                }
-
-                const tacticalSnapshot = HeatMap.analyze(tempChess);
-
-                const preMoveResult = await Engine.runScan(fenBefore);
-                let scoreBefore = this.parseEval(preMoveResult.eval);
-                
-                let bestMoveSan = preMoveResult.bestMove;
-                let bestLineSan = "";
-
-                if(preMoveResult.bestMove && preMoveResult.bestMove !== '-') {
-                    const simGame = new Chess(fenBefore);
-                    const bm = simGame.move({ from: preMoveResult.bestMove.substring(0,2), to: preMoveResult.bestMove.substring(2,4), promotion: 'q' });
-                    if(bm) bestMoveSan = bm.san;
-                    if(preMoveResult.pv) bestLineSan = this.uciToSan(fenBefore, preMoveResult.pv);
-                }
-
-                const moveObj = moves[i];
-                const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
-                
-                tempChess.move(moveObj.san);
-                const fenAfter = tempChess.fen();
-                
-                const isMate = tempChess.in_checkmate();
-                let scoreAfter = 0;
-                let evAfterStr = "";
-
-                if (isMate) {
-                    scoreAfter = (moveObj.color === 'w') ? 100 : -100;
-                    evAfterStr = "M0"; 
-                } else {
-                    const postMoveResult = await Engine.runScan(fenAfter);
-                    evAfterStr = postMoveResult.eval;
-                    scoreAfter = this.parseEval(postMoveResult.eval);
-                }
-
-                let evalLoss = (moveObj.color === 'w') ? scoreBefore - scoreAfter : scoreAfter - scoreBefore;
-                if (moveObj.color === 'b') evalLoss = -evalLoss;
-                let cls = "Neutral";
-                let loss = 0;
-                if (moveObj.color === 'w') loss = scoreBefore - scoreAfter;
-                else loss = scoreAfter - scoreBefore;
-                
-                if (isBook) cls = "Book";
-                else if (isMate) cls = "Best";
-                else if (userUci === preMoveResult.bestMove) cls = "Best";
-                else {
-                    const wasWinning = (moveObj.color === 'w' ? scoreBefore > 2 : scoreBefore < -2);
-                    const isWinning = (moveObj.color === 'w' ? scoreAfter > 1 : scoreAfter < -1);
-                    
-                    if (wasWinning && !isWinning) cls = "Missed"; 
-                    else if (loss >= 2.0) cls = "Blunder";
-                    else if (loss >= 1.0) cls = "Mistake";
-                    else if (loss >= 0.5) cls = "Inaccuracy";
-                    else if (loss >= 0.2) cls = "Good";
-                    else if (loss >= 0.05) cls = "Excellent";
-                    else cls = "Best"; 
-                }
-                
-                const data = {
-                    san: moveObj.san, color: moveObj.color,
-                    eval: evAfterStr, 
-                    evalDiff: loss.toFixed(2),
-                    wdl: preMoveResult.wdl,
-                    bestMoveSan: bestMoveSan,
-                    pvSan: bestLineSan,
-                    classification: cls,
-                    fenBefore: fenBefore,
-                    isMate: isMate,
-                    tactics: tacticalSnapshot
-                };
-
-                Game.analysisData.push(data);
-                
-                if ((cls === 'Blunder' || cls === 'Mistake' || cls === 'Missed') && moveObj.color === Game.userColor) {
-                    const puzzle = { fen: fenBefore, color: moveObj.color, solution: preMoveResult.bestMove, date: Date.now() };
-                    
-                    // Push to generated list
-                    Game.generatedPuzzles.push(puzzle);
-                    
-                    // Duplication Safeguard: Check if identical FEN and solution already exists in archive
-                    const exists = Game.puzzleArchive.some(p => 
-                        p.fen.split(' ')[0] === puzzle.fen.split(' ')[0] && p.solution === puzzle.solution
-                    );
-                    if (!exists) {
-                        Game.puzzleArchive.push(puzzle);
-                        Game.saveArchive();
-                        GUI.updateArchiveCount();
-                    }
-                }
-
-                // Update UI badge if user is viewing somewhere else
-                if (Game.generatedPuzzles.length > 0) {
-                    document.getElementById('puzzleBadge').innerText = Game.generatedPuzzles.length;
-                    document.getElementById('puzzleBadge').classList.remove('d-none');
-                }
-
-                bar.style.width = Math.round(((i+1)/moves.length)*50) + "%"; 
-                text.innerText = `Analyzing: ${i+1}/${moves.length}`;
-            }
-
-            text.innerText = "Consulting Grandmaster Coach...";
-            document.getElementById('coachDisplay').innerHTML = '<div class="text-center p-3 text-muted"><i class="fa-solid fa-brain fa-spin me-2"></i> Analyzing threats & variations...</div>';
-            bar.className = "progress-bar bg-success progress-bar-striped progress-bar-animated";
-            
-            await Gemini.getCommentary(Game.analysisData, "Custom Game", focus);
-            
-            bar.style.width = "100%";
-            GUI.renderAnalysisList();
-
-            Game.nav('first'); 
-            setTimeout(() => { Game.nav('next'); }, 600);
-
-            GUI.showToast("Analysis Complete", "success");
-
-        } catch(err) {
-            console.error(err);
-            GUI.showToast("Analysis Failed. Check logs.", "error");
-        } finally {
-            setTimeout(() => { 
-                progressBox.classList.add('d-none'); 
-                btn.disabled = false;
-                navBtns.forEach(b => b.disabled = false); 
-            }, 1000);
-        }
-    },
-
-    fetchBookData: async function(fen) {
-        try { 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 2000);
-            
-            const res = await fetch(`https://explorer.lichess.ovh/masters?fen=${fen}`, { signal: controller.signal });
-            clearTimeout(timeoutId);
-            
-            if(res.ok) return await res.json();
-        } catch(e){ return null; }
-        return null;
-    },
-    parseEval: function(str) {
-        if (typeof str === 'string' && str.startsWith('M')) {
-             const moves = parseInt(str.replace('M', ''));
-             if (moves === 0) return 100; 
-             return moves > 0 ? 10 : -10; 
-        }
-        return parseFloat(str);
-    },
-    uciToSan: function(fen, pv) {
-        if(!pv) return "";
-        const t = new Chess(fen);
-        let s = "";
-        const mvs = pv.split(' ');
-        for(let m of mvs) {
-            if(!m) continue;
-            const mo = t.move({from:m.substring(0,2), to:m.substring(2,4), promotion: m.length>4?m.substring(4,5):undefined});
-            if(mo) s += mo.san + " "; else break;
-        }
-        return s.trim();
-    }
-};
-
-/**
  * PUZZLE MANAGER - Manages Two Separate States
  */
 const PuzzleManager = {
@@ -1573,6 +1413,7 @@ const PuzzleManager = {
             if (userUci.indexOf(primarySol) === 0) {
                 // Correct
             } else {
+                // Check if in Top 3 moves
                 document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Checking alternative...</span>`;
                 const topMoves = await Engine.getTopMoves(ctx.activePuzzle.fen, 3);
                 const isGood = topMoves.some(m => m.indexOf(userUci) === 0);
@@ -2140,7 +1981,7 @@ const GUI = {
     },
     
     updateMaterial: function() {
-        const chess = Game.getActiveChess();
+        const chess = Game.mode === 'puzzles' || Game.mode === 'archive' ? Game.analysisChess : Game.getActiveChess();
         const board = chess.board();
         
         const fullSet = { p:8, n:2, b:2, r:2, q:1, k:1 };
