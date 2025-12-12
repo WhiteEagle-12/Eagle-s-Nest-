@@ -109,7 +109,7 @@
         .opacity-50 { opacity: 0.5; pointer-events: none; }
         .wdl-stats { font-size: 0.7rem; color: #64748b; text-align: center; margin-top: 2px; font-family: monospace; }
         
-        /* Draggable Controls (Floating Bar) */
+        /* Draggable Controls (Fixed positioned, initialized via JS) */
         #verticalAnalysisControls {
             position: fixed; 
             
@@ -515,6 +515,7 @@ let gamesUnsubscribe = null;
 let puzzlesUnsubscribe = null;
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+const isFirebaseActive = !!firebaseConfig;
 
 /**
  * UTILITIES
@@ -943,41 +944,71 @@ ${logStr}
 const PuzzleArchive = {
     data: [], // Stores all archived puzzles
     currentPuzzle: null,
+    LOCAL_KEY: 'local_puzzles',
 
     // Firestore Integration for Puzzles
     loadFromStorage: function() {
-        if (!activeDataUserId || !db) return;
-        if (puzzlesUnsubscribe) puzzlesUnsubscribe(); 
+        if (!activeDataUserId) return;
+        
+        if (isFirebaseActive) {
+            if (puzzlesUnsubscribe) puzzlesUnsubscribe(); 
 
-        const userPuzzlesRef = collection(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`);
-        const q = query(userPuzzlesRef);
+            const userPuzzlesRef = collection(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`);
+            const q = query(userPuzzlesRef);
 
-        puzzlesUnsubscribe = onSnapshot(q, (snapshot) => {
-            this.data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            puzzlesUnsubscribe = onSnapshot(q, (snapshot) => {
+                this.data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                document.getElementById('archiveBadge').innerText = this.data.length;
+                document.getElementById('archiveBadge').classList.toggle('d-none', this.data.length === 0);
+                this.renderList();
+                log(`Loaded ${this.data.length} archived puzzles for profile: ${activeDataUserId.substring(0, 8)}...`);
+            }, (error) => {
+                log("Firestore Puzzle Snapshot Error: " + error.message, 'ERROR');
+            });
+        } else {
+            // LocalStorage Fallback
+            this.data = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
             document.getElementById('archiveBadge').innerText = this.data.length;
             document.getElementById('archiveBadge').classList.toggle('d-none', this.data.length === 0);
             this.renderList();
-            log(`Loaded ${this.data.length} archived puzzles for profile: ${activeDataUserId.substring(0, 8)}...`);
-        }, (error) => {
-            log("Firestore Puzzle Snapshot Error: " + error.message, 'ERROR');
-        });
+            log(`Loaded ${this.data.length} archived puzzles from LocalStorage.`);
+        }
     },
     
     savePuzzle: async function(puzzle) {
-        if (!activeDataUserId || !db) { log("Cannot save puzzle: Firebase not initialized.", 'ERROR'); return; }
+        if (!activeDataUserId) { log("Cannot save puzzle: No active user profile.", 'ERROR'); return; }
         const puzzleId = puzzle.id.toString();
-        const puzzleRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`, puzzleId);
-        await setDoc(puzzleRef, puzzle);
+
+        if (isFirebaseActive && db) {
+            const puzzleRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`, puzzleId);
+            await setDoc(puzzleRef, puzzle);
+        } else {
+            // LocalStorage Fallback
+            const puzzles = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
+            puzzles.push({ ...puzzle, id: puzzleId });
+            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(puzzles));
+            this.loadFromStorage(); // Refresh UI
+        }
     },
 
     deletePuzzle: async function(id) {
-        if (!activeDataUserId || !db) { log("Cannot delete puzzle: Firebase not initialized.", 'ERROR'); return; }
-        const puzzleRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`, id.toString());
-        await deleteDoc(puzzleRef);
-        GUI.showToast("Puzzle deleted.", "success");
+        if (!activeDataUserId) { log("Cannot delete puzzle: No active user profile.", 'ERROR'); return; }
+
+        if (isFirebaseActive && db) {
+            const puzzleRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`, id.toString());
+            await deleteDoc(puzzleRef);
+            GUI.showToast("Puzzle deleted.", "success");
+        } else {
+            // LocalStorage Fallback
+            let puzzles = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
+            puzzles = puzzles.filter(p => p.id.toString() !== id.toString());
+            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(puzzles));
+            this.loadFromStorage(); // Refresh UI
+            GUI.showToast("Puzzle deleted.", "success");
+        }
     },
     
     // UI Rendering and Logic
@@ -992,14 +1023,12 @@ const PuzzleArchive = {
         this.data.forEach(p => {
             const div = document.createElement('div');
             div.className = "puzzle-item rounded d-flex justify-content-between align-items-center";
+            // REMOVED TRASH BUTTON
             div.innerHTML = `
                 <div onclick="PuzzleArchive.loadPuzzle('${p.id}')">
                     <div class="fw-bold">FEN: ${p.fen.split(' ')[0]}</div>
                     <div class="small text-muted">Solution: ${p.solution.substring(0, 4)}... • Turn: ${p.color.toUpperCase()} • Difficulty: ${p.difficulty}</div>
                 </div>
-                <button class="btn btn-sm btn-outline-danger ms-2" onclick="event.stopPropagation(); PuzzleArchive.deletePuzzle('${p.id}')" title="Delete Puzzle">
-                    <i class="fa-solid fa-trash-can fa-xs"></i>
-                </button>
             `;
             list.appendChild(div);
         });
@@ -1008,11 +1037,9 @@ const PuzzleArchive = {
     loadPuzzle: function(id) {
         const puzzle = this.data.find(p => p.id.toString() === id.toString());
         if (puzzle) {
-            // Load this puzzle into the PuzzleManager's state
             Game.puzzles = [puzzle];
             PuzzleManager.currentIdx = 0;
             
-            // Switch tab and load the puzzle board
             GUI.switchTab('puzzles');
             GUI.showToast("Puzzle loaded from Archive.", "success");
         }
@@ -1034,9 +1061,8 @@ const PuzzleArchive = {
  * GAME LOGIC
  */
 const Game = {
-    data: [], // Array of game objects (synced with Firestore)
+    data: [], 
     
-    // TWO Separate Board States
     analysisChess: new Chess(),
     playChess: new Chess(),
     
@@ -1046,54 +1072,96 @@ const Game = {
     playUserColor: 'w', 
     playViewIndex: -1, 
     analysisData: [], 
-    puzzles: [], // Puzzles generated from the currently loaded game
+    puzzles: [], 
     mode: 'analysis',
     selectedSquare: null, 
+    LOCAL_KEY: 'local_games',
+
     
-    // FIREBASE PERSISTENCE FUNCTIONS
+    // FIREBASE / LOCAL STORAGE PERSISTENCE FUNCTIONS
     saveGame: async function(game) {
-        if (!activeDataUserId || !db) { log("Cannot save: Firebase not initialized or user not logged in.", 'ERROR'); return; }
+        if (!activeDataUserId) { log("Cannot save: No active user profile.", 'ERROR'); return; }
         const gameId = game.id.toString(); 
-        const gameRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`, gameId);
-        await setDoc(gameRef, { ...game, id: gameId }); 
-        log(`Game saved to Firestore: ${game.opening} (${gameId})`);
+
+        if (isFirebaseActive && db) {
+            const gameRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`, gameId);
+            await setDoc(gameRef, { ...game, id: gameId }); 
+            log(`Game saved to Firestore: ${game.opening} (${gameId})`);
+        } else {
+            // LocalStorage Fallback
+            const games = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
+            const existingIndex = games.findIndex(g => g.id.toString() === gameId);
+            if (existingIndex > -1) {
+                games[existingIndex] = { ...game, id: gameId };
+            } else {
+                games.push({ ...game, id: gameId });
+            }
+            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(games));
+            this.loadFromStorage(); // Re-trigger load to update list immediately
+            log(`Game saved to LocalStorage: ${game.opening}`);
+        }
     },
 
     deleteGame: async function(id) {
-        if (!activeDataUserId || !db) { log("Cannot delete: Firebase not initialized or user not logged in.", 'ERROR'); return; }
-        const gameRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`, id.toString());
-        await deleteDoc(gameRef);
-        GUI.showToast("Game deleted.", "success");
+        if (!activeDataUserId) { log("Cannot delete: No active user profile.", 'ERROR'); return; }
+
+        if (isFirebaseActive && db) {
+            const gameRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`, id.toString());
+            await deleteDoc(gameRef);
+            GUI.showToast("Game deleted.", "success");
+        } else {
+            // LocalStorage Fallback
+            let games = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
+            games = games.filter(g => g.id.toString() !== id.toString());
+            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(games));
+            this.loadFromStorage(); // Re-trigger load to update list immediately
+            GUI.showToast("Game deleted.", "success");
+        }
     },
 
     loadFromStorage: function() {
-        if (!activeDataUserId || !db) return;
-        if (gamesUnsubscribe) gamesUnsubscribe(); 
+        if (!activeDataUserId) return;
+        
+        if (isFirebaseActive) {
+            if (gamesUnsubscribe) gamesUnsubscribe(); 
 
-        const userGamesRef = collection(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`);
-        const q = query(userGamesRef);
+            const userGamesRef = collection(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`);
+            const q = query(userGamesRef);
 
-        gamesUnsubscribe = onSnapshot(q, (snapshot) => {
-            Game.data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            gamesUnsubscribe = onSnapshot(q, (snapshot) => {
+                Game.data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                Game.data.sort((a,b) => b.id.localeCompare(a.id)); 
+                renderList();
+                log(`Loaded ${Game.data.length} games for profile: ${activeDataUserId.substring(0, 8)}...`);
+
+                if (Game.data.length > 0 && Game.index === -1) {
+                    Game.load(Game.data[0].id);
+                } else if (Game.data.length === 0) {
+                    document.getElementById('gameList').innerHTML = '<div class="p-3 text-center text-muted small">Upload CSV or PGN to load games</div>';
+                }
+            }, (error) => {
+                log("Firestore Snapshot Error: " + error.message, 'ERROR');
+            });
             
+            // Load puzzle archive data
+            PuzzleArchive.loadFromStorage();
+        } else {
+            // LocalStorage Fallback
+            Game.data = JSON.parse(localStorage.getItem(this.LOCAL_KEY) || '[]');
             Game.data.sort((a,b) => b.id.localeCompare(a.id)); 
             renderList();
-            log(`Loaded ${Game.data.length} games for profile: ${activeDataUserId.substring(0, 8)}...`);
-
+            log(`Loaded ${Game.data.length} games from LocalStorage.`);
             if (Game.data.length > 0 && Game.index === -1) {
                 Game.load(Game.data[0].id);
             } else if (Game.data.length === 0) {
                 document.getElementById('gameList').innerHTML = '<div class="p-3 text-center text-muted small">Upload CSV or PGN to load games</div>';
             }
-        }, (error) => {
-            log("Firestore Snapshot Error: " + error.message, 'ERROR');
-        });
-        
-        // Load puzzle archive data
-        PuzzleArchive.loadFromStorage();
+            PuzzleArchive.loadFromStorage(); // Load puzzles from local storage
+        }
     },
 
     // GAME LOGIC CONTINUES
@@ -1626,11 +1694,13 @@ const GUI = {
     settingsModal: null,
     hintState: 0, 
     showEvalInPlay: true,
+    xOffset: 0, // For draggable controls persistence
+    yOffset: 0, // For draggable controls persistence
     
     init: function() {
         const savedOverrideId = localStorage.getItem('activeDataUserId');
 
-        if (firebaseConfig) {
+        if (isFirebaseActive) {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
@@ -1646,9 +1716,6 @@ const GUI = {
                     } else {
                         activeDataUserId = authUserId;
                     }
-                    
-                    document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...`;
-                    Game.loadFromStorage(); 
                 } else {
                     try {
                         log("Firebase: Attempting sign-in...");
@@ -1659,17 +1726,21 @@ const GUI = {
                         }
                     } catch (e) {
                         log("Firebase Auth Error: " + e.message, 'ERROR');
-                        // Fallback in case of auth failure
-                        activeDataUserId = crypto.randomUUID();
-                        document.getElementById('dataProfileBadge').innerText = `Profile: Local (${activeDataUserId.substring(0, 8)}...)`;
-                        Game.loadFromStorage();
+                        activeDataUserId = 'unauthenticated_user';
                     }
                 }
+                
+                // Finalize setup after auth attempt
+                if (!activeDataUserId) activeDataUserId = authUserId || 'unauthenticated_user';
+                document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...`;
+                Game.loadFromStorage();
             });
         } else {
-            log("Firebase config not found. App cannot save data.", 'WARN');
-            activeDataUserId = 'anonymous_local'; 
-            document.getElementById('dataProfileBadge').innerText = `Profile: Local (${activeDataUserId.substring(0, 8)}...)`;
+            // LOCAL STORAGE FALLBACK
+            log("Firebase config not found. Using Local Storage fallback.", 'WARN');
+            activeDataUserId = 'local_profile';
+            document.getElementById('dataProfileBadge').innerText = `Profile: Local`;
+            Game.loadFromStorage();
         }
         
         this.board = Chessboard('board', {
@@ -1688,7 +1759,7 @@ const GUI = {
                 const pieceColor = p.charAt(0); 
                 
                 if (Game.mode === 'play' || Game.mode === 'puzzles') {
-                    if (pieceColor !== Game.playUserColor && Game.mode === 'play') return false; 
+                    if (pieceColor !== Game.playUserColor && Game.mode === 'play') return false;
                     if (chess.turn() !== pieceColor) return false; 
                     if (chess.game_over()) return false;
                 }
@@ -1720,6 +1791,7 @@ const GUI = {
         window.addEventListener('resize', () => {
              this.board.resize();
              if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
+             if (Game.mode === 'analysis') this.positionControls(); 
         });
         
         Engine.init();
@@ -1734,60 +1806,83 @@ const GUI = {
         
         this.setupDraggableControls();
         
+        // Initial Positioning
+        setTimeout(() => { 
+            this.positionControls(); 
+        }, 500); 
+
         // Mobile Init
         if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
     },
     
+    positionControls: function() {
+        const controls = document.getElementById('verticalAnalysisControls');
+        if (!controls || Game.mode !== 'analysis') return;
+
+        const boardCard = document.getElementById('boardCard');
+        const boardRect = boardCard.getBoundingClientRect();
+        const controlsRect = controls.getBoundingClientRect();
+        
+        // Target position: 10px to the right of the board card
+        let targetLeft = boardRect.right + 10;
+        
+        // Fallback to internal positioning if external space is too small (e.g., small screens)
+        if (targetLeft + controlsRect.width > window.innerWidth) {
+             targetLeft = boardRect.right - controlsRect.width - 15;
+        }
+
+        // Use saved Y position, centered vertically on the board if none saved.
+        const savedPos = JSON.parse(localStorage.getItem('controlPos') || '{}');
+        let targetTop = savedPos.y !== undefined ? savedPos.y : (boardRect.top + boardRect.height / 2) - (controlsRect.height / 2);
+
+        // Update position variables for drag continuation
+        GUI.xOffset = targetLeft;
+        GUI.yOffset = targetTop;
+        
+        // Apply new position
+        controls.style.left = targetLeft + 'px';
+        controls.style.top = targetTop + 'px';
+        controls.style.right = 'initial'; 
+        controls.style.bottom = 'initial';
+    },
+
     setupDraggableControls: function() {
         const controls = document.getElementById('verticalAnalysisControls');
         let isDragging = false;
-        let currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+        let currentX, currentY, initialX, initialY;
 
-        // Apply necessary initial styles for dragging
         controls.style.position = 'fixed'; 
         controls.style.cursor = 'grab';
         
         const savedPos = JSON.parse(localStorage.getItem('controlPos') || '{}');
-        const defaultLeft = 20; 
-        const defaultTop = 200;
 
         if (savedPos.x !== undefined) {
-            xOffset = savedPos.x;
-            yOffset = savedPos.y;
-            controls.style.left = xOffset + 'px';
-            controls.style.top = yOffset + 'px';
-            controls.style.right = 'initial';
-            controls.style.bottom = 'initial';
-        } else {
-             // Default position for first time load
-             xOffset = defaultLeft;
-             yOffset = defaultTop;
-             controls.style.left = xOffset + 'px';
-             controls.style.top = yOffset + 'px';
+            GUI.xOffset = savedPos.x;
+            GUI.yOffset = savedPos.y;
+            controls.style.left = GUI.xOffset + 'px';
+            controls.style.top = GUI.yOffset + 'px';
         }
+
         if (savedPos.orientation === 'landscape') {
             controls.classList.add('landscape');
         }
 
         const dragStart = (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'I') return; // Don't drag if clicking buttons
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'I' || e.target.tagName === 'DIV' && e.target.style.height === '1px') return;
             
             isDragging = true;
             controls.style.cursor = 'grabbing';
 
-            // Ensure coordinates are relative to the viewport top/left
             const rect = controls.getBoundingClientRect();
-            controls.style.left = rect.left + 'px';
-            controls.style.top = rect.top + 'px';
-            controls.style.right = 'initial';
-            controls.style.bottom = 'initial';
+            GUI.xOffset = rect.left; // Update offset based on current screen position
+            GUI.yOffset = rect.top;
 
             if (e.type === "touchstart") {
-                initialX = e.touches[0].clientX - xOffset;
-                initialY = e.touches[0].clientY - yOffset;
+                initialX = e.touches[0].clientX - GUI.xOffset;
+                initialY = e.touches[0].clientY - GUI.yOffset;
             } else {
-                initialX = e.clientX - xOffset;
-                initialY = e.clientY - yOffset;
+                initialX = e.clientX - GUI.xOffset;
+                initialY = e.clientY - GUI.yOffset;
                 e.preventDefault(); 
             }
         };
@@ -1803,8 +1898,8 @@ const GUI = {
                 currentY = e.clientY - initialY;
             }
 
-            xOffset = currentX;
-            yOffset = currentY;
+            GUI.xOffset = currentX;
+            GUI.yOffset = currentY;
 
             controls.style.left = currentX + 'px';
             controls.style.top = currentY + 'px';
@@ -1815,10 +1910,9 @@ const GUI = {
             isDragging = false;
             controls.style.cursor = 'grab';
             
-            // Save new position
             localStorage.setItem('controlPos', JSON.stringify({
-                x: xOffset,
-                y: yOffset,
+                x: GUI.xOffset,
+                y: GUI.yOffset,
                 orientation: controls.classList.contains('landscape') ? 'landscape' : 'portrait'
             }));
         };
@@ -1830,15 +1924,15 @@ const GUI = {
         document.addEventListener('touchmove', drag);
         controls.addEventListener('touchend', dragEnd);
 
-        // Add orientation toggle button inside the controls
         const toggleBtn = document.createElement('button');
         toggleBtn.innerHTML = '<i class="fa-solid fa-arrows-left-right"></i>';
         toggleBtn.title = 'Toggle Orientation';
         toggleBtn.onclick = (e) => {
             e.stopPropagation();
             controls.classList.toggle('landscape');
-            dragEnd(); // Save new orientation
-            // Adjust position slightly after flip if needed, but rely on saved coordinates
+            dragEnd(); 
+            // Re-center vertically after flip if orientation changes from auto-positioned state
+            if (Game.mode === 'analysis') GUI.positionControls();
         };
 
         const separator = controls.querySelector('div[style*="height: 1px"]');
@@ -1935,22 +2029,30 @@ const GUI = {
     },
 
     toggleSettings: function() {
-        document.getElementById('dataProfileIdInput').value = activeDataUserId;
+        document.getElementById('dataProfileIdInput').value = activeDataUserId === 'local_profile' ? '' : activeDataUserId;
         document.getElementById('currentActiveDataId').innerText = activeDataUserId;
         this.settingsModal.show(); 
     },
 
     updateDataProfile: function() {
         const newId = document.getElementById('dataProfileIdInput').value.trim();
-        if (newId && newId !== activeDataUserId) {
-            activeDataUserId = newId;
-            localStorage.setItem('activeDataUserId', newId);
-            document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}... (Override)`;
+        
+        let targetId = newId;
+
+        if (!isFirebaseActive) {
+            targetId = 'local_profile';
+        } else if (!newId) {
+            targetId = authUserId;
+        }
+
+        if (targetId && targetId !== activeDataUserId) {
+            activeDataUserId = targetId;
+            localStorage.setItem('activeDataUserId', targetId);
+            document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...${!isFirebaseActive ? ' (Local)' : (newId ? ' (Override)' : '')}`;
             document.getElementById('currentActiveDataId').innerText = activeDataUserId;
             Game.loadFromStorage();
-            GUI.showToast(`Profile switched to ${newId.substring(0, 8)}... Reloading data.`, "success");
-        } else if (!newId && authUserId) {
-            // Revert to authenticated user
+            GUI.showToast(`Profile switched to ${activeDataUserId.substring(0, 8)}... Reloading data.`, "success");
+        } else if (!newId && isFirebaseActive) {
              activeDataUserId = authUserId;
              localStorage.removeItem('activeDataUserId');
              document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...`;
@@ -1958,6 +2060,7 @@ const GUI = {
              Game.loadFromStorage();
              GUI.showToast("Profile reset to authenticated user.", "success");
         }
+        this.settingsModal.hide();
     },
 
     switchTab: function(mode) {
@@ -2011,6 +2114,7 @@ const GUI = {
             this.update(); 
             this.board.orientation(Game.userColor === 'b' ? 'black' : 'white');
             document.getElementById('gameTitle').innerText = "Game Analysis";
+            setTimeout(() => this.positionControls(), 100);
         } 
         else if (mode === 'puzzles') {
             header.classList.remove('d-none'); 
@@ -2052,7 +2156,10 @@ const GUI = {
 
     toggleSidebar: function() {
         document.getElementById('sidebar').classList.toggle('collapsed');
-        setTimeout(() => this.board.resize(), 300);
+        setTimeout(() => {
+            this.board.resize();
+            if (Game.mode === 'analysis') this.positionControls(); 
+        }, 300);
     },
 
     flip: function(mode) {
