@@ -791,7 +791,7 @@ window.Engine = Engine;
  * TACTICAL HEAT MAP ENGINE - V3 (Comprehensive Board Awareness)
  */
 const HeatMap = {
-    val: { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 },
+    val: { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }, // Normalized: King = 0 for trades
     
     // Core Entry Point
     analyze: function(chess) {
@@ -834,9 +834,17 @@ const HeatMap = {
         const attackers = this.getAttackers(temp, square, opp); 
         const defenders = this.getAttackers(temp, square, turn); 
         
+        // Calculate raw material power on square
+        const atkVal = attackers.reduce((acc, p) => acc + (this.val[p.toLowerCase()] || 0), 0);
+        const defVal = defenders.reduce((acc, p) => acc + (this.val[p.toLowerCase()] || 0), 0);
+        const net = defVal - atkVal;
+
         return {
             attackers: attackers,
             defenders: defenders,
+            atkValue: atkVal,
+            defValue: defVal,
+            net: net,
             status: attackers.length > defenders.length ? "Lost" : (attackers.length > 0 ? "Contested" : "Safe")
         };
     },
@@ -866,7 +874,7 @@ const HeatMap = {
         let txt = "Tactical Radar:\n";
         for (const [sq, data] of Object.entries(report.exchange)) {
             if (data.attackers.length > 0) {
-                txt += `  - ${sq}: Attacked by [${data.attackers.join(',')}], Defended by [${data.defenders.join(',')}].\n`;
+                txt += `  - ${sq}: Attacked by [${data.attackers.join(', ')}] (Val: ${data.atkValue}), Defended by [${data.defenders.join(', ')}] (Val: ${data.defValue}). Net Defense: ${data.net}. Status: ${data.status}\n`;
             }
         }
         return txt;
@@ -912,8 +920,8 @@ You are a Grandmaster Chess Coach.
 For every move, I have provided:
 1. The Move & Engine Best Move.
 2. **Tactical Radar:** This gives you a comprehensive exchange analysis for every contested square.
-   - Example: "e4: Attacked by [N,P], Defended by [K]. Outcome: Attacker wins".
-   - Use this to identify undefended pieces, bad trades, and tactical oversights.
+   - Example: "e4: Attacked by [N,P] (Val: 4), Defended by [K] (Val: 0). Net Defense: -4. Status: Lost".
+   - Use this to identify undefended pieces, bad trades, and tactical oversights based on the *Net Defense* value.
 3. **Principal Variation (PV):** The future moves the engine predicts.
 
 **CRITICAL INSTRUCTIONS:**
@@ -1342,10 +1350,13 @@ const Scanner = {
                     // Push to generated list
                     Game.generatedPuzzles.push(puzzle);
                     
-                    // Duplication Safeguard: Check if identical FEN and solution already exists in archive
-                    const exists = Game.puzzleArchive.some(p => 
-                        p.fen.split(' ')[0] === puzzle.fen.split(' ')[0] && p.solution === puzzle.solution
-                    );
+                    // Duplication Safeguard: Check if identical FEN (pieces, color, castling, ep) exists
+                    // We ignore halfmove clock and fullmove number for puzzle identity
+                    const getHash = (f) => f.split(' ').slice(0, 4).join(' ');
+                    const pHash = getHash(puzzle.fen);
+
+                    const exists = Game.puzzleArchive.some(p => getHash(p.fen) === pHash);
+                    
                     if (!exists) {
                         Game.puzzleArchive.push(puzzle);
                         Game.saveArchive();
