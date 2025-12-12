@@ -158,7 +158,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            z-index: 100;
+            z-index: 2000; /* Increased to stay above all overlays */
             background: rgba(255, 255, 255, 0.95);
             padding: 10px;
             border-radius: 12px;
@@ -571,7 +571,16 @@ const Engine = {
             this.worker.postMessage('uci');
             this.worker.postMessage('setoption name UCI_ShowWDL value true'); 
             this.worker.onmessage = (e) => this.handleMessage(e.data);
-        } catch(e) { log("Engine Error: " + e); }
+            this.worker.onerror = (e) => {
+                log("Engine Worker Error: " + e.message);
+                document.getElementById('engineStatus').className = "badge bg-danger";
+                document.getElementById('engineStatus').innerText = "Failed";
+            };
+        } catch(e) { 
+            log("Engine Init Error: " + e); 
+            document.getElementById('engineStatus').className = "badge bg-danger";
+            document.getElementById('engineStatus').innerText = "Failed";
+        }
     },
 
     handleMessage: function(line) {
@@ -596,7 +605,11 @@ const Engine = {
 
     runScan: function(fen) {
         return new Promise(resolve => {
-            if(!this.isReady) resolve({ eval: "0.00", bestMove: "-", pv: "", wdl: null });
+            if(!this.isReady) {
+                // If engine failed to load, return immediate neutral eval
+                resolve({ eval: "0.00", bestMove: "-", pv: "", wdl: null });
+                return;
+            }
             
             const oldHandler = this.worker.onmessage;
             this.worker.onmessage = null;
@@ -890,11 +903,19 @@ ${logStr}
 
         try {
             log("Sending rich context request to Gemini...");
+            
+            // Timeout Wrapper for Fetch
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+            
             const res = await fetch(MODEL_ENDPOINT+`?key=${k}`, {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
+
             const d = await res.json();
             if(!d.candidates || !d.candidates[0]) return false;
             const text = d.candidates[0].content.parts[0].text;
@@ -910,7 +931,7 @@ ${logStr}
             return false;
         } catch (e) { 
             console.error("Gemini Error", e);
-            alert("Coach Analysis Failed. Check System Log.");
+            alert("Coach Analysis Failed (Network/API). Check System Log.");
             return false; 
         }
     }
@@ -1083,6 +1104,11 @@ const Scanner = {
         const focus = document.getElementById('analysisFocus').value;
         const navBtns = document.querySelectorAll('#verticalAnalysisControls button');
 
+        if (!Game.history || Game.history.length === 0) {
+            alert("No moves to analyze!");
+            return;
+        }
+
         // Reset and show UI
         btn.disabled = true;
         navBtns.forEach(b => b.disabled = true);
@@ -1100,6 +1126,9 @@ const Scanner = {
             const tempChess = new Chess();
             
             for(let i=0; i<moves.length; i++) {
+                // UI Breather - Allows browser to paint progress bar
+                await new Promise(r => setTimeout(r, 20));
+
                 const fenBefore = tempChess.fen();
                 
                 let isBook = false;
@@ -1207,7 +1236,7 @@ const Scanner = {
 
             // Auto Play First Move on Finish
             Game.nav('first'); // Reset
-            setTimeout(() => { Game.nav('next'); }, 500);
+            setTimeout(() => { Game.nav('next'); }, 600);
 
             // Visual Indicator of Done
             const overlay = document.getElementById('analysisCompleteOverlay');
@@ -1218,7 +1247,7 @@ const Scanner = {
             console.error(err);
             alert("Analysis failed. See log.");
         } finally {
-            // ALWAYS re-enable buttons
+            // ALWAYS re-enable buttons, even if crashed
             setTimeout(() => { 
                 progressBox.classList.add('d-none'); 
                 btn.disabled = false;
@@ -1229,7 +1258,13 @@ const Scanner = {
 
     fetchBookData: async function(fen) {
         try { 
-            const res = await fetch(`https://explorer.lichess.ovh/masters?fen=${fen}`);
+            // 2 Second Timeout for book fetch to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+            
+            const res = await fetch(`https://explorer.lichess.ovh/masters?fen=${fen}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
             if(res.ok) return await res.json();
         } catch(e){ return null; }
         return null;
