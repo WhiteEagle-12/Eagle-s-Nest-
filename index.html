@@ -43,33 +43,30 @@
         .mode-tab:hover { background: #f8fafc; color: #334155; }
         .mode-tab.active { background: #f8fafc; color: #1e1b4b; border-color: #cbd5e1; border-bottom: 1px solid #f8fafc; margin-bottom: -1px; z-index: 2; }
         
-        /* Updated padding to prevent button overlap */
         .arena { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 80px 20px 20px; overflow-y: auto; position: relative; min-height: 0; }
-        /* Reduced max-width slightly */
         .board-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 10px; position: relative; transition: all 0.3s; z-index: 5; }
         
-        /* Fullscreen Board Mode Fix */
+        /* Fullscreen Board Mode */
         .board-card.fullscreen-mode {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; max-width: none; z-index: 1000;
             padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #1e1b4b;
         }
         .board-card.fullscreen-mode #board-wrapper { 
-            height: 85vh; width: 85vh; /* Square ratio relative to height */
-            max-width: 95vw; max-height: 85vh; /* Prevent overflow */
+            height: 85vh; width: 85vh; 
+            max-width: 95vw; max-height: 85vh; 
             margin: 0 auto; 
         }
         .board-card.fullscreen-mode #evalBar { display: none; }
         .board-card.fullscreen-mode .fullscreen-exit-btn { display: block; }
         .fullscreen-exit-btn { display: none; position: absolute; top: 20px; right: 20px; z-index: 1001; }
         
-        /* Board Wrapper & Arrow Overlay */
+        /* Board Wrapper */
         #board-wrapper { position: relative; width: 100%; }
         #board { width: 100%; height: 100%; touch-action: none; z-index: 10; position: relative; }
         #arrowOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
         
-        /* Analysis Panel - Auto Sizing */
+        /* Analysis Panel */
         .analysis-panel { 
-            /* Changed from fixed 30vh to allow better resizing */
             flex: 0 0 35vh; 
             min-height: 150px;
             max-height: 50vh;
@@ -95,87 +92,44 @@
         .log-entry.active { background-color: #eef2ff; border-left: 4px solid #6366f1; }
         
         .move-class { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        .class-Brilliant { background-color: #1baca6; } 
-        .class-Great { background-color: #5c8bb0; } 
-        .class-Best { background-color: #96bc4b; } 
-        .class-Excellent { background-color: #96bc4b; opacity: 0.8; } 
-        .class-Good { background-color: #96bc4b; opacity: 0.6; } 
-        .class-Book { background-color: #d5a47d; } 
-        .class-Inaccuracy { background-color: #f0c15c; color: #5e4b1e; } 
-        .class-Mistake { background-color: #e6912c; } 
-        .class-Blunder { background-color: #fa412d; } 
-        .class-Missed { background-color: #ff879c; } 
+        .class-Brilliant { background-color: #1baca6; } .class-Great { background-color: #5c8bb0; } .class-Best { background-color: #96bc4b; } 
+        .class-Excellent { background-color: #96bc4b; opacity: 0.8; } .class-Good { background-color: #96bc4b; opacity: 0.6; } 
+        .class-Book { background-color: #d5a47d; } .class-Inaccuracy { background-color: #f0c15c; color: #5e4b1e; } 
+        .class-Mistake { background-color: #e6912c; } .class-Blunder { background-color: #fa412d; } .class-Missed { background-color: #ff879c; } 
         .class-Neutral { background-color: #a3a3a3; } 
 
         .coach-display { padding: 15px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; color: #334155; min-height: 0; flex: 1; overflow-y: auto; position: relative; border-left: 4px solid #cbd5e1; }
-        
-        .coach-display.Brilliant { border-left-color: #1baca6; background: #e0f2f1; }
-        .coach-display.Great { border-left-color: #5c8bb0; background: #e1f5fe; }
-        .coach-display.Best { border-left-color: #96bc4b; background: #f1f8e9; }
-        .coach-display.Excellent { border-left-color: #96bc4b; background: #f1f8e9; }
-        .coach-display.Good { border-left-color: #96bc4b; background: #f9fbe7; }
-        .coach-display.Book { border-left-color: #d5a47d; background: #fff3e0; }
-        .coach-display.Inaccuracy { border-left-color: #f0c15c; background: #fffde7; }
-        .coach-display.Mistake { border-left-color: #e6912c; background: #fff3e0; }
-        .coach-display.Blunder { border-left-color: #fa412d; background: #ffebee; }
-        .coach-display.Missed { border-left-color: #ff879c; background: #fce4ec; }
+        .coach-display.Brilliant { border-left-color: #1baca6; background: #e0f2f1; } .coach-display.Great { border-left-color: #5c8bb0; background: #e1f5fe; }
+        .coach-display.Best { border-left-color: #96bc4b; background: #f1f8e9; } .coach-display.Excellent { border-left-color: #96bc4b; background: #f1f8e9; }
+        .coach-display.Good { border-left-color: #96bc4b; background: #f9fbe7; } .coach-display.Book { border-left-color: #d5a47d; background: #fff3e0; }
+        .coach-display.Inaccuracy { border-left-color: #f0c15c; background: #fffde7; } .coach-display.Mistake { border-left-color: #e6912c; background: #fff3e0; }
+        .coach-display.Blunder { border-left-color: #fa412d; background: #ffebee; } .coach-display.Missed { border-left-color: #ff879c; background: #fce4ec; }
 
         .control-row { display: flex; justify-content: center; gap: 5px; margin-top: 5px; }
-        
-        /* Eval Bar Styles */
         .eval-bar-wrapper { width: 100%; height: 8px; background: #475569; border-radius: 4px; overflow: hidden; margin: 5px 0; transition: opacity 0.3s; position: relative; }
         .eval-fill { height: 100%; width: 50%; background: #22c55e; transition: width 0.3s ease-out; }
         .eval-container { transition: opacity 0.3s; }
         .play-mode-blind .eval-container { opacity: 0; pointer-events: none; }
-
         .material-stats { font-size: 0.9rem; font-weight: 600; color: #475569; display: flex; justify-content: space-between; padding: 6px 10px; background: #f8fafc; border-radius: 4px; margin-top: 5px; border: 1px solid #e2e8f0; }
         .mat-side { display: flex; gap: 2px; align-items: center; min-height: 20px; }
         .mat-label { font-size: 0.7em; text-transform: uppercase; color: #94a3b8; margin-right: 5px; }
-        
-        .graveyard-w { color: #000; font-size: 1.2em; display:flex; } 
-        .graveyard-b { color: #fff; text-shadow: 0 0 1px #000; font-size: 1.2em; display:flex; } 
-
+        .graveyard-w { color: #000; font-size: 1.2em; display:flex; } .graveyard-b { color: #fff; text-shadow: 0 0 1px #000; font-size: 1.2em; display:flex; } 
         .puzzle-feedback { text-align: center; height: 30px; font-weight: bold; margin-top: 10px; }
-        .text-correct { color: #16a34a; }
-        .text-incorrect { color: #dc2626; }
-        .puzzle-success { animation: pulse-green 1s; box-shadow: 0 0 15px #22c55e; }
-        .puzzle-fail { animation: shake 0.5s; box-shadow: 0 0 15px #ef4444; }
-        
+        .text-correct { color: #16a34a; } .text-incorrect { color: #dc2626; }
+        .puzzle-success { animation: pulse-green 1s; box-shadow: 0 0 15px #22c55e; } .puzzle-fail { animation: shake 0.5s; box-shadow: 0 0 15px #ef4444; }
         .highlight-select { box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.5); }
         .highlight-hint { box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.8) !important; background: rgba(255, 255, 0, 0.2); }
         .highlight-selected { box-shadow: inset 0 0 0 4px rgba(59, 130, 246, 0.8) !important; }
         .opacity-50 { opacity: 0.5; pointer-events: none; }
-
         .wdl-stats { font-size: 0.7rem; color: #64748b; text-align: center; margin-top: 2px; font-family: monospace; }
         
-        /* Floating Vertical Controls for Analysis */
         #verticalAnalysisControls {
-            position: absolute;
-            right: 15px;
-            top: 40%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 2000; /* Increased to stay above all overlays */
-            background: rgba(255, 255, 255, 0.95);
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            border: 1px solid #cbd5e1;
+            position: absolute; right: 15px; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 2000;
+            background: rgba(255, 255, 255, 0.95); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #cbd5e1;
         }
         #verticalAnalysisControls button {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            border: 1px solid #e2e8f0;
-            background: white;
-            color: #334155;
+            width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+            border: 1px solid #e2e8f0; background: white; color: #334155;
         }
         #verticalAnalysisControls button:hover { background: #f1f5f9; transform: scale(1.05); color: #0f172a; }
         #verticalAnalysisControls button:active { transform: scale(0.95); }
@@ -185,57 +139,31 @@
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
         .checkmate-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 60; display: flex; justify-content: center; align-items: center;
-            border-radius: 8px; pointer-events: none;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 60; display: flex;
+            justify-content: center; align-items: center; border-radius: 8px; pointer-events: none;
         }
         .checkmate-text {
-            color: #ef4444; font-size: 3rem; font-weight: 900; text-transform: uppercase;
-            text-shadow: 2px 2px 0 #fff; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #ef4444; font-size: 3rem; font-weight: 900; text-transform: uppercase; text-shadow: 2px 2px 0 #fff; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        
-        .analysis-complete-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 55;
-            background: rgba(255,255,255,0.4);
-            animation: fadeInOut 1.5s ease-in-out forwards;
-        }
-        @keyframes fadeInOut { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
 
-        /* Mobile / Small Screen Responsiveness */
+        /* TOAST NOTIFICATION */
+        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999; }
+        .custom-toast {
+            background: #334155; color: white; padding: 12px 24px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex; align-items: center; gap: 10px; font-weight: 500; opacity: 0; transform: translateY(20px); transition: all 0.3s ease;
+        }
+        .custom-toast.show { opacity: 1; transform: translateY(0); }
+        .custom-toast.success { background: #065f46; }
+        .custom-toast.error { background: #991b1b; }
+
         @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                height: 100%;
-                box-shadow: 5px 0 15px rgba(0,0,0,0.2);
-            }
-            .sidebar.collapsed {
-                margin-left: -320px; /* Standard collapse behavior */
-            }
-            
-            .arena {
-                padding: 10px !important; /* Maximize board space */
-            }
-            
-            .board-card {
-                width: 98% !important;
-                max-width: none;
-            }
-            
-            #verticalAnalysisControls {
-                right: 5px;
-                top: 50%;
-                scale: 0.85; /* Slightly smaller controls */
-            }
-            
-            .analysis-panel {
-                flex: 0 0 40vh; /* Give more relative space to text on small screens */
-            }
-            
-            .analysis-logs { display: none !important; } /* Hide logs on mobile */
-            
-            .mode-tab { padding: 8px 10px; font-size: 0.8rem; }
-            .navbar-brand { font-size: 1rem; }
+            .sidebar { position: absolute; height: 100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
+            .sidebar.collapsed { margin-left: -320px; }
+            .arena { padding: 10px !important; }
+            .board-card { width: 98% !important; max-width: none; }
+            #verticalAnalysisControls { right: 5px; top: 50%; scale: 0.85; }
+            .analysis-panel { flex: 0 0 40vh; }
+            .analysis-logs { display: none !important; }
         }
     </style>
 </head>
@@ -251,7 +179,6 @@
         <button class="btn btn-sm btn-outline-light" onclick="GUI.toggleSettings()">
             <i class="fa-solid fa-gear"></i>
         </button>
-        <!-- Import Buttons -->
         <button class="btn btn-sm btn-outline-light" onclick="document.getElementById('pgnModal').classList.add('show'); document.getElementById('pgnModal').style.display='block'">
             <i class="fa-solid fa-file-import"></i> Paste PGN
         </button>
@@ -266,8 +193,6 @@
 </nav>
 
 <div class="main-layout">
-    
-    <!-- LEFT: List -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Search opening...">
@@ -287,10 +212,7 @@
         </div>
     </div>
 
-    <!-- RIGHT: Content Area -->
     <div class="content-area">
-        
-        <!-- Tabs -->
         <div class="mode-tabs">
             <div class="mode-tab active" id="tab-analysis" onclick="GUI.switchTab('analysis')">
                 <i class="fa-solid fa-magnifying-glass me-1"></i> Pro Analysis
@@ -303,7 +225,6 @@
             </div>
         </div>
 
-        <!-- NEW VERTICAL CONTROLS (Analysis Only) -->
         <div id="verticalAnalysisControls" class="d-none">
             <button onclick="GUI.first()" title="First Move"><i class="fa-solid fa-backward-step"></i></button>
             <button onclick="GUI.prev()" title="Previous Move"><i class="fa-solid fa-chevron-left"></i></button>
@@ -314,25 +235,19 @@
             <button onclick="GUI.flip()" title="Flip Board"><i class="fa-solid fa-retweet"></i></button>
         </div>
 
-        <!-- TOP: Board Arena -->
         <div class="arena">
             <div class="board-card" id="boardCard">
                 <button class="btn btn-danger btn-sm fullscreen-exit-btn" onclick="GUI.toggleFullscreen()"><i class="fa-solid fa-compress"></i> Exit</button>
                 
-                <!-- HEADER (Hidden in Pro Analysis) -->
                 <div class="d-flex justify-content-between align-items-center mb-2" id="boardHeaderContainer">
                     <div id="boardHeaderLeft">
                         <strong id="gameTitle" class="text-truncate d-block" style="max-width: 250px;">Practice Board</strong>
                     </div>
-                    
                     <div id="puzzleStatusHeader" class="d-none flex-grow-1 text-center">
                         <span class="badge bg-warning text-dark" id="puzzleCountBadge">Puzzle 0/0</span>
                     </div>
-
                     <div class="d-flex align-items-center gap-2" id="boardHeaderRight">
                         <button class="btn btn-xs btn-outline-secondary" onclick="GUI.toggleFullscreen()" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
-                        
-                        <!-- Vs Engine Toggle (For Puzzles) -->
                         <div class="form-check form-switch m-0 d-none" id="puzzleEngineContainer">
                             <input class="form-check-input" type="checkbox" id="puzzleVsEngine" onchange="PuzzleManager.toggleEngineMode()">
                             <label class="form-check-label small fw-bold" for="puzzleVsEngine">Vs Engine</label>
@@ -340,23 +255,14 @@
                     </div>
                 </div>
 
-                <!-- BOARD -->
                 <div id="board-wrapper">
                     <div id="board"></div>
                     <svg id="arrowOverlay"></svg>
-                    <!-- Checkmate Overlay -->
                     <div id="checkmateOverlay" class="checkmate-overlay d-none">
                         <div class="checkmate-text">CHECKMATE</div>
                     </div>
-                    <div id="analysisCompleteOverlay" class="d-none">
-                         <div class="bg-white p-3 rounded shadow d-flex align-items-center gap-2">
-                             <i class="fa-solid fa-circle-check text-success fa-2x"></i>
-                             <span class="fw-bold fs-4">Analysis Done</span>
-                         </div>
-                    </div>
                 </div>
                 
-                <!-- EVAL BAR (Wrappable for hiding) -->
                 <div id="evalContainer" class="eval-container">
                     <div class="eval-bar-wrapper" id="evalBar">
                         <div class="eval-fill" id="evalFill"></div>
@@ -367,29 +273,16 @@
                     </div>
                 </div>
                 
-                <!-- MATERIAL DISPLAY (Graveyard) -->
                 <div class="material-stats" id="materialDisplay">
-                    <div class="mat-side">
-                         <span class="mat-label">W Captured:</span>
-                         <div class="graveyard-w" id="matWhite"></div>
-                    </div>
-                    <div class="mat-side">
-                        <span class="mat-label">B Captured:</span>
-                        <div class="graveyard-b" id="matBlack"></div>
-                    </div>
+                    <div class="mat-side"><span class="mat-label">W Captured:</span><div class="graveyard-w" id="matWhite"></div></div>
+                    <div class="mat-side"><span class="mat-label">B Captured:</span><div class="graveyard-b" id="matBlack"></div></div>
                 </div>
 
-                <!-- PUZZLE FEEDBACK -->
                 <div id="puzzleFeedback" class="puzzle-feedback d-none"></div>
 
-                <!-- CONTROLS: Analysis (Original Horizontal - Hidden via JS now) -->
-                <div id="analysisControls" class="d-none">
-                    <div class="control-row">
-                        <!-- Horizontal controls are removed in favor of vertical controls for this view, or kept for fallback? User asked to move them. We hide this div. -->
-                    </div>
-                </div>
+                <!-- Analysis Controls (Hidden but ID needed for logic) -->
+                <div id="analysisControls" class="d-none"><div class="control-row"></div></div>
 
-                <!-- CONTROLS: Puzzle -->
                 <div id="puzzleControls" class="d-none">
                     <div class="control-row">
                         <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.prev()" title="Previous Puzzle"><i class="fa-solid fa-chevron-left"></i></button>
@@ -401,7 +294,6 @@
                     </div>
                 </div>
 
-                <!-- CONTROLS: Play Computer -->
                 <div id="playControls" class="d-none">
                       <div class="control-row">
                         <button class="btn btn-sm btn-outline-secondary" onclick="GUI.prev()"><i class="fa-solid fa-chevron-left"></i></button>
@@ -427,7 +319,6 @@
             </div>
         </div>
 
-        <!-- BOTTOM: Analysis & Logs -->
         <div class="analysis-panel" id="analysisPanel">
             <div class="analysis-moves">
                 <div class="sidebar-header d-flex justify-content-between align-items-center bg-light">
@@ -447,7 +338,14 @@
                     </div>
                 </div>
                 
-                <!-- Gemini Coach Display -->
+                <!-- RELATIVE POSITION PROGRESS BAR (Fixes Cut-off Issue) -->
+                <div class="p-2 bg-light border-bottom d-none" id="scanProgress">
+                    <div class="progress" style="height: 5px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
+                    </div>
+                    <div class="text-center small text-muted mt-1" id="scanText">Analyzing...</div>
+                </div>
+
                 <div class="coach-display" id="coachDisplay">
                     <div class="text-center text-muted" style="margin-top: 20px;">
                         <i class="fa-solid fa-user-graduate fa-2x mb-2"></i><br>
@@ -455,15 +353,6 @@
                     </div>
                 </div>
 
-                <!-- Progress Bar Container (Absolute Bottom or Overlay inside panel) -->
-                <div class="p-2 bg-light border-bottom d-none" id="scanProgress" style="position: absolute; bottom: 0; left: 0; width: 100%; z-index: 50;">
-                    <div class="progress" style="height: 5px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
-                    </div>
-                    <div class="text-center small text-muted mt-1" id="scanText">Analyzing...</div>
-                </div>
-                
-                <!-- HIDDEN LIST IN ANALYSIS -->
                 <div id="analysisListContainer">
                       <div class="log-container" id="analysisList">
                         <div class="text-center text-muted mt-5 small">Select a game to start.</div>
@@ -479,6 +368,9 @@
 
     </div>
 </div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
 
 <!-- MODALS -->
 <div class="modal fade" id="settingsModal" tabindex="-1">
@@ -1105,7 +997,7 @@ const Scanner = {
         const navBtns = document.querySelectorAll('#verticalAnalysisControls button');
 
         if (!Game.history || Game.history.length === 0) {
-            alert("No moves to analyze!");
+            GUI.showToast("No moves to analyze!", "error");
             return;
         }
 
@@ -1238,14 +1130,12 @@ const Scanner = {
             Game.nav('first'); // Reset
             setTimeout(() => { Game.nav('next'); }, 600);
 
-            // Visual Indicator of Done
-            const overlay = document.getElementById('analysisCompleteOverlay');
-            overlay.classList.remove('d-none');
-            setTimeout(() => overlay.classList.add('d-none'), 2000);
+            // Toast Notification
+            GUI.showToast("Analysis Complete", "success");
 
         } catch(err) {
             console.error(err);
-            alert("Analysis failed. See log.");
+            GUI.showToast("Analysis Failed. Check logs.", "error");
         } finally {
             // ALWAYS re-enable buttons, even if crashed
             setTimeout(() => { 
@@ -1459,9 +1349,16 @@ const GUI = {
                 const turnColor = chess.turn(); 
                 const pieceColor = p.charAt(0); 
                 
-                // Computer Play Mode: Strict Side Checking
+                // Computer Play Mode: Strict Side & Turn Checking
                 if (Game.mode === 'play') {
+                    // Rule 1: Must be user's color to pick up
                     if (pieceColor !== Game.playUserColor) return false;
+                    
+                    // Rule 2: Must be user's TURN to pick up
+                    if (chess.turn() !== Game.playUserColor) return false;
+                    
+                    // Rule 3: Game must not be over
+                    if (chess.game_over()) return false;
                 }
 
                 if (turnColor !== pieceColor) return false;
@@ -1517,7 +1414,10 @@ const GUI = {
         if (!Game.selectedSquare) {
             if (piece && piece.color === turn) {
                 // Strict check for Play mode
-                if (Game.mode === 'play' && piece.color !== Game.playUserColor) return;
+                if (Game.mode === 'play') {
+                     if (piece.color !== Game.playUserColor) return;
+                     if (chess.turn() !== Game.playUserColor) return; // Strict turn check
+                }
                 
                 Game.selectedSquare = square;
                 $('.square-55d63').removeClass('highlight-selected');
@@ -1573,6 +1473,26 @@ const GUI = {
         }
     },
     
+    showToast: function(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        
+        let icon = type === 'success' ? '<i class="fa-solid fa-circle-check fa-lg text-success"></i>' : '<i class="fa-solid fa-triangle-exclamation fa-lg text-warning"></i>';
+        
+        toast.innerHTML = `${icon} <span>${message}</span>`;
+        container.appendChild(toast);
+        
+        // Animate In
+        setTimeout(() => toast.classList.add('show'), 100);
+        
+        // Animate Out & Remove
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    },
+
     updateEloLabel: function(val) {
         const elo = 800 + (val * 120);
         document.getElementById('eloLabel').innerText = `ELO: ~${elo}`;
