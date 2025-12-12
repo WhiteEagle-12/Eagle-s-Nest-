@@ -67,7 +67,17 @@
         #board { width: 100%; height: 100%; touch-action: none; z-index: 10; position: relative; }
         #arrowOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
         
-        .analysis-panel { height: 320px; background: white; border-top: 1px solid #cbd5e1; display: flex; flex-direction: row; flex-shrink: 0; transition: height 0.3s; }
+        /* Analysis Panel - Auto Sizing */
+        .analysis-panel { 
+            flex: 0 0 30vh; /* Takes 30% of vertical height, letting board take the rest */
+            min-height: 200px; /* Minimum useful height */
+            background: white; 
+            border-top: 1px solid #cbd5e1; 
+            display: flex; 
+            flex-direction: row; 
+            flex-shrink: 0; 
+            transition: height 0.3s; 
+        }
         .analysis-moves { flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; }
         .analysis-logs { width: 40%; display: flex; flex-direction: column; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; transition: width 0.3s; }
         .analysis-logs.hidden { display: none !important; }
@@ -130,6 +140,7 @@
         
         .highlight-select { box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.5); }
         .highlight-hint { box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.8) !important; background: rgba(255, 255, 0, 0.2); }
+        .highlight-selected { box-shadow: inset 0 0 0 4px rgba(59, 130, 246, 0.8) !important; }
         .opacity-50 { opacity: 0.5; pointer-events: none; }
 
         .wdl-stats { font-size: 0.7rem; color: #64748b; text-align: center; margin-top: 2px; font-family: monospace; }
@@ -164,6 +175,7 @@
         }
         #verticalAnalysisControls button:hover { background: #f1f5f9; transform: scale(1.05); color: #0f172a; }
         #verticalAnalysisControls button:active { transform: scale(0.95); }
+        #verticalAnalysisControls button:disabled { opacity: 0.5; cursor: not-allowed; background: #e2e8f0; }
 
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
@@ -176,6 +188,42 @@
         .checkmate-text {
             color: #ef4444; font-size: 3rem; font-weight: 900; text-transform: uppercase;
             text-shadow: 2px 2px 0 #fff; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Mobile / Small Screen Responsiveness */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                height: 100%;
+                box-shadow: 5px 0 15px rgba(0,0,0,0.2);
+            }
+            .sidebar.collapsed {
+                margin-left: -320px; /* Standard collapse behavior */
+            }
+            
+            .arena {
+                padding: 10px !important; /* Maximize board space */
+            }
+            
+            .board-card {
+                width: 98% !important;
+                max-width: none;
+            }
+            
+            #verticalAnalysisControls {
+                right: 5px;
+                top: 50%;
+                scale: 0.85; /* Slightly smaller controls */
+            }
+            
+            .analysis-panel {
+                flex: 0 0 40vh; /* Give more relative space to text on small screens */
+            }
+            
+            .analysis-logs { display: none !important; } /* Hide logs on mobile */
+            
+            .mode-tab { padding: 8px 10px; font-size: 0.8rem; }
+            .navbar-brand { font-size: 1rem; }
         }
     </style>
 </head>
@@ -613,7 +661,11 @@ const Engine = {
                      evalVal = -cp;
                      if(mate !== null) mate = -mate;
                  }
-                 GUI.updateEval(evalVal, mate);
+                 // STRICT CHECK: Only update eval if the analyzed fen matches current board
+                 // This prevents "ghost" evals from previous tabs
+                 if (Game.getActiveChess().fen().split(' ')[0] === fen.split(' ')[0]) {
+                    GUI.updateEval(evalVal, mate);
+                 }
             }
             if(line.startsWith('bestmove')) this.worker.removeEventListener('message', listener);
         };
@@ -861,6 +913,7 @@ const Game = {
     analysisData: [], 
     puzzles: [], 
     mode: 'analysis',
+    selectedSquare: null, // For Tap-to-Move
     
     // STORAGE
     save: function() {
@@ -935,6 +988,7 @@ const Game = {
     
     move: function(from, to, prom) {
         const chess = this.getActiveChess();
+        // Strict legality check handled by chess.js move() returning null on invalid move
         const move = chess.move({ from: from, to: to, promotion: prom || 'q' });
         
         if(move) {
@@ -1007,8 +1061,10 @@ const Scanner = {
         const text = document.getElementById('scanText');
         const progressBox = document.getElementById('scanProgress');
         const focus = document.getElementById('analysisFocus').value;
-        
+        const navBtns = document.querySelectorAll('#verticalAnalysisControls button');
+
         btn.disabled = true;
+        navBtns.forEach(b => b.disabled = true); // Disable controls
         progressBox.classList.remove('d-none');
         
         Game.analysisData = []; 
@@ -1124,6 +1180,7 @@ const Scanner = {
         setTimeout(() => { 
             progressBox.classList.add('d-none'); 
             btn.disabled = false;
+            navBtns.forEach(b => b.disabled = false); // Re-enable controls
             // Auto-play first move after analysis
             Game.index = -1;
             Game.nav('next'); 
@@ -1317,6 +1374,10 @@ const GUI = {
             position: 'start',
             pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
             onDragStart: (src, p) => {
+                // Drag start cleans up tap selection
+                Game.selectedSquare = null;
+                $('.square-55d63').removeClass('highlight-selected');
+
                 // READ-ONLY ANALYSIS
                 if (Game.mode === 'analysis') return false; 
                 
@@ -1344,7 +1405,18 @@ const GUI = {
             }
         });
 
-        window.addEventListener('resize', () => this.board.resize());
+        // TAP TO MOVE HANDLER
+        $('#board').on('click', '.square-55d63', function(e) {
+            e.preventDefault();
+            const square = $(this).attr('data-square');
+            GUI.handleSquareClick(square);
+        });
+
+        window.addEventListener('resize', () => {
+             this.board.resize();
+             if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
+        });
+        
         Engine.init();
         PuzzleManager.init();
         this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
@@ -1355,6 +1427,76 @@ const GUI = {
         this.showEvalInPlay = document.getElementById('showEvalToggle').checked;
         Game.loadFromStorage();
         this.updateEloLabel(5);
+        
+        // Mobile Init
+        if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
+    },
+
+    handleSquareClick: function(square) {
+        if (Game.mode === 'analysis') return; // Read-only
+
+        const chess = Game.getActiveChess();
+        const turn = chess.turn();
+        const piece = chess.get(square);
+
+        // State 1: Select Piece
+        if (!Game.selectedSquare) {
+            if (piece && piece.color === turn) {
+                // Strict check for Play mode
+                if (Game.mode === 'play' && piece.color !== Game.playUserColor) return;
+                
+                Game.selectedSquare = square;
+                $('.square-55d63').removeClass('highlight-selected');
+                $('.square-' + square).addClass('highlight-selected');
+            }
+            return;
+        }
+
+        // State 2: Move or Reselect
+        const source = Game.selectedSquare;
+        
+        // If clicked same square, deselect
+        if (source === square) {
+            Game.selectedSquare = null;
+            $('.square-55d63').removeClass('highlight-selected');
+            return;
+        }
+
+        // If clicked own piece, switch selection
+        if (piece && piece.color === turn) {
+             // Strict check for Play mode
+             if (Game.mode === 'play' && piece.color !== Game.playUserColor) {
+                 // Trying to capture own piece? Invalid.
+             } else {
+                 Game.selectedSquare = square;
+                 $('.square-55d63').removeClass('highlight-selected');
+                 $('.square-' + square).addClass('highlight-selected');
+                 return;
+             }
+        }
+
+        // Attempt Move
+        if (Game.mode === 'puzzles') {
+             PuzzleManager.handleDrop(source, square).then(res => {
+                 if (res === 'snapback') {
+                     // Invalid puzzle move visually, but logic handled in manager
+                 } else {
+                     // Valid
+                     GUI.board.position(Game.analysisChess.fen());
+                 }
+             });
+        } else {
+            const success = Game.move(source, square);
+            if (!success) {
+                // Invalid move
+                Game.selectedSquare = null;
+                $('.square-55d63').removeClass('highlight-selected');
+            } else {
+                // Valid move
+                Game.selectedSquare = null;
+                $('.square-55d63').removeClass('highlight-selected');
+            }
+        }
     },
     
     updateEloLabel: function(val) {
@@ -1364,7 +1506,12 @@ const GUI = {
 
     switchTab: function(mode) {
         Game.mode = mode;
-        Engine.stop(); 
+        Engine.stop();
+        
+        // RESET EVAL BAR IMMEDIATELY
+        this.updateEval(0, null); // Visual reset
+        document.getElementById('wdlValue').innerText = "Win: 50%"; 
+
         document.getElementById('board').classList.remove('opacity-50');
         document.querySelectorAll('.mode-tab').forEach(el => el.classList.remove('active'));
         
