@@ -38,8 +38,32 @@
         
         .content-area { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f8fafc; height: 100%; position: relative; }
         
-        .mode-tabs { padding: 10px 10px 0 10px; background: #fff; border-bottom: 1px solid #cbd5e1; display: flex; gap: 5px; flex-shrink: 0; }
-        .mode-tab { padding: 8px 16px; cursor: pointer; border-radius: 6px 6px 0 0; font-weight: 600; font-size: 0.9rem; color: #64748b; border: 1px solid transparent; border-bottom: none; display: flex; align-items: center; gap: 6px; }
+        /* FIX: Tabs for Horizontal Scrolling */
+        .mode-tabs { 
+            padding: 10px 10px 0 10px; 
+            background: #fff; 
+            border-bottom: 1px solid #cbd5e1; 
+            display: flex; 
+            gap: 5px; 
+            flex-shrink: 0; 
+            overflow-x: auto; /* Allow horizontal scrolling */
+            white-space: nowrap; /* Prevent wrapping */
+            -webkit-overflow-scrolling: touch; 
+        }
+        .mode-tab { 
+            padding: 8px 16px; 
+            cursor: pointer; 
+            border-radius: 6px 6px 0 0; 
+            font-weight: 600; 
+            font-size: 0.9rem; 
+            color: #64748b; 
+            border: 1px solid transparent; 
+            border-bottom: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            flex-shrink: 0; /* Prevent tab shrinking */
+        }
         .mode-tab:hover { background: #f8fafc; color: #334155; }
         .mode-tab.active { background: #f8fafc; color: #1e1b4b; border-color: #cbd5e1; border-bottom: 1px solid #f8fafc; margin-bottom: -1px; z-index: 2; }
         
@@ -67,13 +91,13 @@
         }
         .analysis-moves { 
             flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; position: relative; 
-            min-height: 0; /* Fix 2.3: Add min-height: 0 for proper flex sizing */
+            min-height: 0; 
         }
         .analysis-logs { width: 40%; display: flex; flex-direction: column; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; transition: width 0.3s; }
         .analysis-logs.hidden { display: none !important; }
         .analysis-panel.hidden { display: none !important; }
         
-        #analysisListContainer { flex: none; display: none !important; } /* Hidden as requested */
+        #analysisListContainer { flex: none; display: none !important; } 
         .analysis-mode-hidden { display: none !important; }
 
         .log-entry { padding: 6px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
@@ -94,7 +118,7 @@
             font-size: 0.95rem; 
             color: #334155; 
             min-height: 0; 
-            flex: 1; /* Takes full height in analysis mode */
+            flex: 1; 
             overflow-y: auto; 
             position: relative; 
             border-left: 4px solid #cbd5e1; 
@@ -125,12 +149,12 @@
         
         /* Draggable Controls (Desktop/Default) */
         #verticalAnalysisControls {
-            position: fixed; /* Changed from absolute */
+            position: fixed; 
             right: 15px; 
             top: 50%; 
             transform: translateY(-50%); 
             display: flex; 
-            flex-direction: column; /* Default vertical */
+            flex-direction: column; 
             gap: 10px; 
             z-index: 2000;
             background: rgba(255, 255, 255, 0.95); 
@@ -138,17 +162,17 @@
             border-radius: 12px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.25); 
             border: 1px solid #cbd5e1;
-            cursor: grab; /* Indicate draggable */
-            touch-action: none; /* For mobile dragging */
-            transition: none; /* Prevents visual glitches during drag */
+            cursor: grab; 
+            touch-action: none; 
+            transition: none; 
         }
         #verticalAnalysisControls.landscape {
-            flex-direction: row; /* Horizontal orientation */
+            flex-direction: row; 
             transform: none;
-            top: auto !important; /* Managed by JS drag */
-            left: auto !important; /* Managed by JS drag */
-            right: auto !important; /* Managed by JS drag */
-            bottom: auto !important; /* Managed by JS drag */
+            top: auto !important; 
+            left: auto !important; 
+            right: auto !important; 
+            bottom: auto !important; 
         }
         #verticalAnalysisControls button {
             width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
@@ -185,11 +209,10 @@
             .sidebar.collapsed { margin-left: -320px; }
 
             .content-area { 
-                overflow-y: auto; /* The whole content area scrolls now */
+                overflow-y: auto; 
                 height: 100%;
             }
             .arena { 
-                /* Allow content to flow down to the analysis panel */
                 padding: 10px 5px 5px 5px !important; 
                 overflow-y: visible; 
                 height: auto; 
@@ -303,6 +326,7 @@
         </div>
 
         <div class="arena">
+            <!-- MAIN BOARD CARD (Used for Analysis, Smart Puzzles, Computer Play, and Archive Play) -->
             <div class="board-card" id="boardCard">
                 
                 <div class="d-flex justify-content-between align-items-center mb-2" id="boardHeaderContainer">
@@ -358,6 +382,14 @@
                     <div class="control-row mt-2">
                          <button class="btn btn-sm btn-success w-100" onclick="GUI.hint()"><i class="fa-solid fa-lightbulb"></i> Hint</button>
                     </div>
+                    <!-- Puzzle Depth Slider -->
+                    <div class="mt-3 pt-2 border-top">
+                        <div class="d-flex justify-content-between">
+                            <label class="small fw-bold text-muted">Puzzle Depth (User Moves)</label>
+                            <span class="badge bg-primary" id="puzzleDepthLabel">1 Move</span>
+                        </div>
+                        <input type="range" class="form-range" min="1" max="5" value="1" id="puzzleDepthRange" oninput="PuzzleManager.updateDepth(this.value)">
+                    </div>
                 </div>
 
                 <div id="playControls" class="d-none">
@@ -384,7 +416,7 @@
 
             </div>
             
-            <!-- PUZZLE ARCHIVE PANEL (Removed FEN list and Clear All button) -->
+            <!-- PUZZLE ARCHIVE MANAGEMENT PANEL (Shown when NOT playing archive puzzles) -->
             <div id="puzzleArchivePanel" class="d-none board-card" style="max-width: 600px; padding: 20px;">
                 <h5 class="fw-bold">Puzzle Archive (<span id="archiveCount">0</span> Puzzles)</h5>
                 <div class="d-flex gap-2 mb-3">
@@ -481,7 +513,7 @@
         </div>
         <hr>
         <h6 class="mt-4">Data Management</h6>
-        <!-- NEW: Clear Archive button moved here -->
+        <!-- Clear Archive button moved here -->
         <button class="btn btn-sm btn-danger w-100" onclick="ArchiveManager.clearArchive()">
             <i class="fa-solid fa-trash-can me-2"></i> Clear All Archived Puzzles
         </button>
@@ -524,21 +556,19 @@ const apiKey = "";
 /**
  * UTILITIES
  */
-window.sys_logs = []; // Fix 3.1: Initialize persistent log array
+window.sys_logs = []; 
 function log(msg, type = 'INFO') {
     const box = document.getElementById('sysLog');
     const now = new Date();
     const time = now.toLocaleTimeString().split(' ')[0];
     
-    // Fix 3.1: Store in persistent log
     window.sys_logs.push({ timestamp: now.toISOString(), type: type, message: msg });
     
     const div = document.createElement('div');
     
-    // Fix 3.1: Apply color based on type
-    let color = '#4ade80'; // INFO (green)
-    if (type === 'ERROR') color = '#f87171'; // Red
-    else if (type === 'WARN') color = '#facc15'; // Yellow
+    let color = '#4ade80'; 
+    if (type === 'ERROR') color = '#f87171'; 
+    else if (type === 'WARN') color = '#facc15'; 
     
     div.innerHTML = `<span style="color: ${color};">[${type}]</span> [${time}] ${msg}`;
     div.className = 'log-line'; 
@@ -601,7 +631,6 @@ const Engine = {
     runScan: function(fen) {
         return new Promise(resolve => {
             if(!this.isReady) {
-                // If engine failed to load, return immediate neutral eval
                 resolve({ eval: "0.00", bestMove: "-", pv: "", wdl: null });
                 return;
             }
@@ -635,7 +664,7 @@ const Engine = {
             
             this.worker.postMessage('stop');
             this.worker.postMessage(`position fen ${fen}`);
-            this.worker.postMessage('go depth 12'); // Fixed depth for scanning
+            this.worker.postMessage('go depth 12'); 
         });
     },
 
@@ -666,7 +695,7 @@ const Engine = {
     
     analyze: function(fen) {
         if(!this.isReady) return;
-        this.worker.postMessage('stop'); // Stop any lingering analysis
+        this.worker.postMessage('stop'); 
         this.worker.postMessage(`position fen ${fen}`);
         this.worker.postMessage('go depth 14');
         
@@ -689,7 +718,6 @@ const Engine = {
                     evalVal = -cp;
                     if(mate !== null) mate = -mate;
                 }
-                // STRICT CHECK: Only update eval if the analyzed fen matches current board
                 if (Game.getActiveChess().fen().split(' ')[0] === fen.split(' ')[0]) {
                     GUI.updateEval(evalVal, mate);
                 }
@@ -702,24 +730,22 @@ const Engine = {
     playResponse: function(fen) {
           if(!this.isReady) return;
           
-          this.worker.postMessage('stop'); // CRITICAL FIX: Stop any concurrent analysis
+          this.worker.postMessage('stop'); 
           
-          // Fix 1.4: Watchdog Timer
           const watchdog = setTimeout(() => {
               log("WARN: Engine timed out (3s). Forcing stop and reset.", 'WARN');
               this.worker.removeEventListener('message', listener);
               this.worker.postMessage('stop');
-              this.worker.postMessage('ucinewgame'); // Soft reset
-              // Re-enable user interaction if it was waiting for the engine
+              this.worker.postMessage('ucinewgame'); 
               document.getElementById('boardCard').classList.remove('opacity-50');
           }, 3000); 
 
           this.worker.postMessage(`position fen ${fen}`);
-          this.worker.postMessage('go movetime 1500'); // Increased movetime for stability
+          this.worker.postMessage('go movetime 1500'); 
           
           const listener = (e) => {
               if(e.data.startsWith('bestmove')) {
-                  clearTimeout(watchdog); // Clear watchdog on successful move
+                  clearTimeout(watchdog); 
                   const best = e.data.split(' ')[1];
                   this.worker.removeEventListener('message', listener);
                   Game.engineMove(best);
@@ -769,13 +795,12 @@ const HeatMap = {
         const turn = chess.turn();
         const opp = turn === 'w' ? 'b' : 'w';
         
-        // Detailed attack map: Square -> List of Pieces (e.g. 'e4' -> ['n', 'q'])
         const myDefenses = this.getDetailedAttacks(chess, turn); 
         const oppAttacks = this.getDetailedAttacks(chess, opp); 
 
         let hanging = [];
         let pressure = [];
-        let radar = []; // For Gemini
+        let radar = []; 
 
         const board = chess.board(); 
         const files = ['a','b','c','d','e','f','g','h'];
@@ -806,7 +831,6 @@ const HeatMap = {
                             status = "Contested";
                         }
 
-                        // Detailed string for Gemini
                         radar.push(`${piece.type.toUpperCase()} at ${sq}: Attacked by ${atkCount} (${atkStr}), Defended by ${defCount} (${defStr}). Status: ${status}`);
                     }
                 }
@@ -820,10 +844,8 @@ const HeatMap = {
         };
     },
 
-    // Returns Map: Square -> ['p', 'n', 'q'...] (Types of attackers)
     getDetailedAttacks: function(chessInstance, color) {
         const temp = new Chess(chessInstance.fen());
-        // Force turn to generate moves
         if (temp.turn() !== color) {
             const tokens = temp.fen().split(' ');
             tokens[1] = color;
@@ -836,7 +858,6 @@ const HeatMap = {
         
         moves.forEach(m => {
             if (!attackMap[m.to]) attackMap[m.to] = [];
-            // Push the piece type that is attacking
             attackMap[m.to].push(m.piece);
         });
         return attackMap;
@@ -959,13 +980,15 @@ const Game = {
     history: [],
     index: -1,
     userColor: 'w',
-    playUserColor: 'w', // Current user color in Computer Play
-    playViewIndex: -1, // Index for viewing history in Play mode (-1 is live)
+    playUserColor: 'w', 
+    playViewIndex: -1, 
     analysisData: [], 
-    currentPuzzles: [], // Puzzles generated for current game. (Renamed from Game.puzzles)
-    puzzleArchive: JSON.parse(localStorage.getItem('chess_puzzles') || '[]'), // Persistent storage
+    generatedPuzzles: [], // Puzzles from analysis
+    currentPuzzles: [],   // Puzzles currently loaded into the player (could be from analysis or archive)
+    puzzleArchive: JSON.parse(localStorage.getItem('chess_puzzles') || '[]'), 
     mode: 'analysis',
-    selectedSquare: null, // For Tap-to-Move
+    puzzleSource: null, // 'current' or 'archive'
+    selectedSquare: null, 
     
     // STORAGE
     save: function() {
@@ -987,7 +1010,6 @@ const Game = {
     // Helper to get active instance
     getActiveChess: function() {
         if (this.mode === 'play') {
-             // If viewing history, we need to load a temp board state
              if (this.playViewIndex !== -1) {
                  const temp = new Chess();
                  const history = this.playChess.history({ verbose: true });
@@ -998,6 +1020,7 @@ const Game = {
              }
              return this.playChess;
         }
+        // Used for analysis, smart puzzles, and archive puzzles
         return this.analysisChess;
     },
 
@@ -1013,7 +1036,6 @@ const Game = {
         const inMiddleOfGame = Game.index > -1;
         
         if (isActiveAnalysis || inMiddleOfGame) {
-            // Use window.confirm instead of alert/modal for simplicity as per existing code base
             if (!confirm("Analysis is running or complete. Switching games will clear current analysis data. Continue?")) {
                 return; 
             }
@@ -1041,14 +1063,16 @@ const Game = {
         document.getElementById('scanBtn').disabled = false;
         
         this.analysisData = [];
-        this.currentPuzzles = []; // Reset current puzzles
+        this.generatedPuzzles = [];
+        this.currentPuzzles = []; 
+        this.puzzleSource = null;
         Gemini.comments = {};
         
         GUI.renderAnalysisList();
         GUI.resetCoachDisplay();
         
         document.getElementById('puzzleBadge').classList.add('d-none');
-        document.getElementById('board').classList.remove('opacity-50');
+        document.getElementById('boardCard').classList.remove('opacity-50');
 
         let rawColor = (g.userColor || 'white').toLowerCase();
         this.userColor = rawColor.startsWith('b') ? 'b' : 'w';
@@ -1068,10 +1092,8 @@ const Game = {
     move: function(from, to, prom) {
         const chess = this.getActiveChess();
         
-        // Block move if we are in play mode history review
         if (this.mode === 'play' && this.playViewIndex !== -1) return false;
         
-        // Strict legality check handled by chess.js move() returning null on invalid move
         const move = chess.move({ from: from, to: to, promotion: prom || 'q' });
         
         if(move) {
@@ -1081,8 +1103,8 @@ const Game = {
                 Engine.analyze(chess.fen());
             } 
             else if (this.mode === 'play') {
-                this.playViewIndex = -1; // Reset view index on new move
-                GUI.board.position(this.playChess.fen()); // Ensure visual is live board
+                this.playViewIndex = -1; 
+                GUI.board.position(this.playChess.fen()); 
                 GUI.update();
                 if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
                 
@@ -1090,6 +1112,9 @@ const Game = {
                     Engine.playResponse(this.playChess.fen());
                 }
                 Engine.analyze(this.playChess.fen());
+            }
+            else if (this.mode === 'puzzles' || this.mode === 'archive') {
+                // Puzzle Manager handles the logic for both modes
             }
             GUI.clearArrows();
             return true;
@@ -1105,7 +1130,7 @@ const Game = {
         const prom = bestMoveUci.length > 4 ? bestMoveUci.substring(4,5) : 'q';
         
         this.playChess.move({ from: from, to: to, promotion: prom });
-        GUI.board.position(this.playChess.fen()); // Use direct board pos set for speed/sync
+        GUI.board.position(this.playChess.fen()); 
         GUI.update();
         if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
         Engine.analyze(this.playChess.fen());
@@ -1122,25 +1147,21 @@ const Game = {
         } else if (dir === 'prev') {
             this.playViewIndex = Math.max(-1, this.playViewIndex - 1);
         } else if (dir === 'first') {
-            this.playViewIndex = -1; // Index -1 means viewing the live position
+            this.playViewIndex = -1; 
         } else if (dir === 'last') {
             this.playViewIndex = lastMoveIndex;
         }
 
-        // Reconstruct FEN
         const tempChess = new Chess();
         if (this.playViewIndex >= 0) {
             for (let i = 0; i <= this.playViewIndex; i++) {
                 tempChess.move(history[i].san);
             }
             GUI.board.position(tempChess.fen());
-            // Disable input when reviewing history
             document.getElementById('boardCard').classList.add('opacity-50');
         } else {
-            // Index -1 means viewing the live position
             GUI.board.position(this.playChess.fen());
             document.getElementById('boardCard').classList.remove('opacity-50');
-            // Re-analyze live position if back to live play
             Engine.analyze(this.playChess.fen());
         }
         GUI.clearArrows();
@@ -1151,7 +1172,8 @@ const Game = {
             this.navPlay(dir);
             return;
         }
-
+        
+        // Navigation only applies to analysis mode
         if (this.mode !== 'analysis') return;
 
         document.getElementById('checkmateOverlay').classList.add('d-none');
@@ -1194,7 +1216,6 @@ const Scanner = {
             return;
         }
 
-        // Reset and show UI
         btn.disabled = true;
         navBtns.forEach(b => b.disabled = true);
         
@@ -1204,7 +1225,7 @@ const Scanner = {
         
         try {
             Game.analysisData = []; 
-            Game.currentPuzzles = []; // Using currentPuzzles
+            Game.generatedPuzzles = [];
             
             const moves = Game.history;
             const tempChess = new Chess();
@@ -1299,9 +1320,14 @@ const Scanner = {
                 
                 if ((cls === 'Blunder' || cls === 'Mistake' || cls === 'Missed') && moveObj.color === Game.userColor) {
                     const puzzle = { fen: fenBefore, color: moveObj.color, solution: preMoveResult.bestMove, date: Date.now() };
-                    Game.currentPuzzles.push(puzzle);
-                    // Add to permanent archive if unique
-                    const exists = Game.puzzleArchive.some(p => p.fen === puzzle.fen && p.solution === puzzle.solution);
+                    
+                    // Push to generated list
+                    Game.generatedPuzzles.push(puzzle);
+                    
+                    // Duplication Safeguard: Check if identical FEN and solution already exists in archive
+                    const exists = Game.puzzleArchive.some(p => 
+                        p.fen.split(' ')[0] === puzzle.fen.split(' ')[0] && p.solution === puzzle.solution
+                    );
                     if (!exists) {
                         Game.puzzleArchive.push(puzzle);
                         Game.saveArchive();
@@ -1309,13 +1335,14 @@ const Scanner = {
                     }
                 }
 
+                // Update UI badge if user is viewing somewhere else
+                if (Game.generatedPuzzles.length > 0) {
+                    document.getElementById('puzzleBadge').innerText = Game.generatedPuzzles.length;
+                    document.getElementById('puzzleBadge').classList.remove('d-none');
+                }
+
                 bar.style.width = Math.round(((i+1)/moves.length)*50) + "%"; 
                 text.innerText = `Analyzing: ${i+1}/${moves.length}`;
-            }
-
-            if (Game.currentPuzzles.length > 0) {
-                document.getElementById('puzzleBadge').innerText = Game.currentPuzzles.length;
-                document.getElementById('puzzleBadge').classList.remove('d-none');
             }
 
             text.innerText = "Consulting Grandmaster Coach...";
@@ -1382,11 +1409,22 @@ const Scanner = {
  * PUZZLE MANAGER
  */
 const PuzzleManager = {
+    puzzleDepth: 1, 
     currentIdx: 0,
     activePuzzle: null,
     vsEngine: false,
+    currentPlyIndex: 0, 
 
-    init: function() { this.vsEngine = false; },
+    init: function() { 
+        this.vsEngine = false; 
+        this.updateDepth(document.getElementById('puzzleDepthRange').value); 
+    },
+    
+    updateDepth: function(val) {
+        this.puzzleDepth = parseInt(val);
+        document.getElementById('puzzleDepthLabel').innerText = `${this.puzzleDepth} Move${this.puzzleDepth === 1 ? '' : 's'}`;
+        this.currentPlyIndex = 0;
+    },
 
     toggleEngineMode: function() {
         this.vsEngine = document.getElementById('puzzleVsEngine').checked;
@@ -1396,19 +1434,26 @@ const PuzzleManager = {
         } else {
             feedback.innerHTML = '';
             if(this.activePuzzle) {
-                Game.analysisChess.load(this.activePuzzle.fen); // Use analysisChess as temp for puzzle board display
+                Game.analysisChess.load(this.activePuzzle.fen); 
                 GUI.board.position(this.activePuzzle.fen);
+                this.currentPlyIndex = 0;
             }
         }
     },
 
     loadPuzzles: function() {
+        this.currentPlyIndex = 0;
+        const boardCard = document.getElementById('boardCard');
+
         if (Game.currentPuzzles.length === 0) {
-            document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No puzzles loaded. Scan a game or load from archive.</span>`;
-            document.getElementById('board').classList.add('opacity-50');
+            if (Game.puzzleSource === 'archive') {
+                document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No archived puzzles available. Return to Archive tab to start random puzzles.</span>`;
+            } else {
+                document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No puzzles loaded. Scan a game first.</span>`;
+            }
             return;
         }
-        document.getElementById('board').classList.remove('opacity-50');
+        
         document.getElementById('puzzleEngineContainer').classList.remove('d-none');
         this.currentIdx = 0;
         this.showPuzzle(0);
@@ -1429,14 +1474,19 @@ const PuzzleManager = {
         GUI.clearArrows();
         GUI.updateMaterial(); 
         
+        this.currentPlyIndex = 0;
         document.getElementById('puzzleCountBadge').innerText = `Puzzle ${idx + 1}/${Game.currentPuzzles.length}`;
-        document.getElementById('puzzleFeedback').innerHTML = "";
+        document.getElementById('puzzleFeedback').innerHTML = `<span class="text-primary fw-bold">Find the ${this.puzzleDepth} move solution.</span>`;
     },
 
     handleDrop: async function(source, target) {
+        if (Game.mode !== 'puzzles' && Game.mode !== 'archive') return 'snapback';
+        
+        const move = { from: source, to: target, promotion: 'q' };
+
         if (this.vsEngine) {
-            const move = Game.analysisChess.move({ from: source, to: target, promotion: 'q' });
-            if (move) {
+            const result = Game.analysisChess.move(move);
+            if (result) {
                 GUI.update();
                 Engine.analyze(Game.analysisChess.fen());
                 if (!Game.analysisChess.game_over()) {
@@ -1456,7 +1506,7 @@ const PuzzleManager = {
 
         const valid = await this.validateMove(source, target);
         if (valid) {
-            Game.analysisChess.move({ from: source, to: target, promotion: 'q' });
+            // Move is already played inside validateMove
             GUI.updateMaterial();
             return undefined;
         } else {
@@ -1468,29 +1518,93 @@ const PuzzleManager = {
         if (!this.activePuzzle) return false;
         
         const userUci = source + target; 
-        const primarySol = this.activePuzzle.solution;
+        const isUserTurn = Game.analysisChess.turn() === this.activePuzzle.color; // Is it currently the player's turn to move?
+        const isFirstMove = (this.currentPlyIndex === 0);
         
-        if (primarySol.indexOf(userUci) === 0) {
-            this.onSuccess();
-            return true;
-        }
-        
-        document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Checking alternative...</span>`;
-        const topMoves = await Engine.getTopMoves(this.activePuzzle.fen, 3);
-        const isGood = topMoves.some(m => m.indexOf(userUci) === 0);
-        
-        if (isGood) {
-            this.onSuccess();
-            return true;
-        } else {
-            this.onFail();
+        // Safety check: The user should only move on their designated puzzle turn
+        if (Game.analysisChess.turn() !== this.activePuzzle.color && !isFirstMove) {
+            // This happens when the user tries to move immediately after the engine moved, but before their next turn.
             return false;
         }
+
+
+        if (isFirstMove) {
+            // Validate first move against the official solution
+            const primarySol = this.activePuzzle.solution;
+            if (userUci.indexOf(primarySol) === 0) {
+                // Correct primary solution
+            } else {
+                // Check top moves if it's an accepted alternative
+                document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Checking alternative...</span>`;
+                const topMoves = await Engine.getTopMoves(this.activePuzzle.fen, 3);
+                const isGood = topMoves.some(m => m.indexOf(userUci) === 0);
+                
+                if (!isGood) {
+                    this.onFail();
+                    return false;
+                }
+            }
+        } else {
+            // For subsequent user moves, check if the move is "good" (i.e., top 3 PV)
+            document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Checking position quality...</span>`;
+            const topMoves = await Engine.getTopMoves(Game.analysisChess.fen(), 3);
+            const isGood = topMoves.some(m => m.indexOf(userUci) === 0);
+
+            if (!isGood) {
+                this.onFail();
+                return false;
+            }
+        }
+
+        // If validation passed, execute user's move
+        const moveResult = Game.analysisChess.move({ from: source, to: target, promotion: 'q' });
+        if (!moveResult) return false; 
+        
+        this.currentPlyIndex++;
+        
+        // 1. Check if the puzzle is SOLVED after the user's move
+        // The user has made X moves, total plies is currentPlyIndex
+        if (Math.ceil(this.currentPlyIndex / 2) === this.puzzleDepth) {
+             this.onSuccess();
+             return true;
+        }
+        
+        // 2. If not solved, queue the engine response (opponent's turn)
+        if (!Game.analysisChess.game_over()) {
+            document.getElementById('boardCard').classList.add('opacity-50');
+            document.getElementById('puzzleFeedback').innerHTML = `<span class="text-info"><i class="fa-solid fa-robot"></i> Opponent thinking...</span>`;
+            
+            setTimeout(async () => {
+                const engineMoveUci = await Engine.getBestMove(Game.analysisChess.fen());
+                document.getElementById('boardCard').classList.remove('opacity-50');
+                
+                if (engineMoveUci) {
+                    Game.analysisChess.move({ from: engineMoveUci.substring(0,2), to: engineMoveUci.substring(2,4), promotion: 'q' });
+                    GUI.board.position(Game.analysisChess.fen());
+                    GUI.updateMaterial();
+                    this.currentPlyIndex++;
+                    
+                    if (Game.analysisChess.game_over()) {
+                        this.onSuccess(); // Mate or draw ends sequence successfully
+                    } else {
+                        // Ready for next user move (only required if depth > 1)
+                        const remainingMoves = this.puzzleDepth - Math.ceil(this.currentPlyIndex / 2);
+                        document.getElementById('puzzleFeedback').innerHTML = `<span class="text-primary"><i class="fa-solid fa-brain"></i> Your Turn (${remainingMoves} moves left)</span>`;
+                    }
+                } else {
+                    this.onFail();
+                }
+            }, 500);
+        } else {
+             this.onSuccess(); 
+        }
+        
+        return true;
     },
 
     onSuccess: function() {
         document.getElementById('board').classList.add('puzzle-success');
-        document.getElementById('puzzleFeedback').innerHTML = `<span class="text-correct"><i class="fa-solid fa-check"></i> Correct!</span>`;
+        document.getElementById('puzzleFeedback').innerHTML = `<span class="text-correct"><i class="fa-solid fa-check"></i> Correct! Solved in ${this.puzzleDepth} moves!</span>`;
         setTimeout(() => document.getElementById('board').classList.remove('puzzle-success'), 500);
     },
 
@@ -1503,6 +1617,7 @@ const PuzzleManager = {
             if(this.activePuzzle && !this.vsEngine) {
                 Game.analysisChess.load(this.activePuzzle.fen);
                 GUI.board.position(this.activePuzzle.fen);
+                this.currentPlyIndex = 0; // Reset ply counter on fail
             }
         }, 1000); 
     },
@@ -1531,22 +1646,27 @@ const ArchiveManager = {
         }
         // Shuffle and load the whole archive into currentPuzzles for training
         Game.currentPuzzles = [...Game.puzzleArchive].sort(() => Math.random() - 0.5);
-        GUI.switchTab('puzzles');
+        Game.puzzleSource = 'archive'; // Set source to archive
+        GUI.switchTab('archive'); // Re-switch to archive to trigger play mode UI
     },
 
     clearArchive: function() {
-        // Changed alert to custom modal/confirm replacement, moved from Archive Panel to Settings
         if(confirm("Are you sure you want to delete ALL saved puzzles? This action cannot be undone.")) {
             Game.puzzleArchive = [];
             Game.saveArchive();
-            this.renderList(); // Re-render the info text
+            this.renderList(); 
             GUI.updateArchiveCount();
             GUI.showToast("Puzzle archive cleared.", "success");
+            // If currently playing the archive, reset the state
+            if (Game.puzzleSource === 'archive') {
+                Game.currentPuzzles = [];
+                Game.puzzleSource = null;
+                GUI.switchTab('archive'); // Go back to management view
+            }
         }
     },
 
     renderList: function() {
-        // Updated to remove the FEN list and show summary text instead
         const infoDiv = document.getElementById('archiveListInfo');
         if (Game.puzzleArchive.length === 0) {
             infoDiv.innerHTML = 'Puzzles loaded in the archive are available for random training. (Archive is currently empty)';
@@ -1583,14 +1703,17 @@ const GUI = {
                 if (Game.mode === 'play') {
                     if (pieceColor !== Game.playUserColor || chess.turn() !== Game.playUserColor || chess.game_over()) return false;
                 }
-
+                
+                // Block if in puzzle mode but trying to move the wrong color
+                if ((Game.mode === 'puzzles' || Game.mode === 'archive') && pieceColor !== chess.turn()) return false;
+                
                 if (turnColor !== pieceColor) return false;
                 return true;
             },
             onDrop: async (src, tgt) => {
                 if (src === tgt || (Game.mode === 'play' && Game.playViewIndex !== -1)) return 'snapback';
 
-                if (Game.mode === 'puzzles') {
+                if (Game.mode === 'puzzles' || Game.mode === 'archive') {
                     return await PuzzleManager.handleDrop(src, tgt);
                 } else {
                     const res = Game.move(src, tgt);
@@ -1621,28 +1744,24 @@ const GUI = {
         this.showEvalInPlay = document.getElementById('showEvalToggle').checked;
         Game.loadFromStorage();
         this.updateEloLabel(5);
-        this.updateArchiveCount(); // Update archive count on load
-        this.setupDragControls(); // Setup draggable analysis controls
+        this.updateArchiveCount(); 
+        this.setupDragControls(); 
 
         if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
     },
     
-    // NEW: Drag and Orientation for Controls
     setupDragControls: function() {
         const controls = document.getElementById('verticalAnalysisControls');
         let isDragging = false;
         let offset = { x: 0, y: 0 };
 
         const startDrag = (e) => {
-            // Prevent dragging if the user clicked a button
             if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return; 
             isDragging = true;
             controls.style.cursor = 'grabbing';
             const clientX = e.clientX || e.touches[0].clientX;
             const clientY = e.clientY || e.touches[0].clientY;
 
-            // Ensure we are using explicit positioning (left/top) instead of right/transform
-            // when starting to drag, especially if the element was in its default position.
             const rect = controls.getBoundingClientRect();
             controls.style.left = `${rect.left}px`;
             controls.style.top = `${rect.top}px`;
@@ -1670,7 +1789,6 @@ const GUI = {
             const controlW = controls.offsetWidth;
             const controlH = controls.offsetHeight;
 
-            // Constrain position to viewport
             newX = Math.max(0, Math.min(newX, viewportW - controlW));
             newY = Math.max(0, Math.min(newY, viewportH - controlH));
 
@@ -1693,7 +1811,6 @@ const GUI = {
 
         GUI.toggleControlsOrientation = function() {
             controls.classList.toggle('landscape');
-            // Force a slight reposition after changing orientation to recalculate center
             setTimeout(() => { GUI.board.resize(); }, 50);
         };
     },
@@ -1733,7 +1850,7 @@ const GUI = {
              }
         }
 
-        if (Game.mode === 'puzzles') {
+        if (Game.mode === 'puzzles' || Game.mode === 'archive') {
              PuzzleManager.handleDrop(source, square).then(res => {
                  if (res !== 'snapback') GUI.board.position(Game.analysisChess.fen());
              });
@@ -1776,7 +1893,7 @@ const GUI = {
         const count = Game.puzzleArchive.length;
         document.getElementById('archiveCount').innerText = count;
         document.getElementById('archiveBadge').innerText = count;
-        ArchiveManager.renderList(); // Update the info text when count changes
+        ArchiveManager.renderList(); 
     },
 
     switchTab: function(mode) {
@@ -1784,44 +1901,42 @@ const GUI = {
         Engine.stop();
         
         Game.playViewIndex = -1;
-        document.getElementById('boardCard').classList.remove('opacity-50');
-
+        
         this.updateEval(0, null); 
         document.getElementById('wdlValue').innerText = "Win: 50%"; 
 
-        document.getElementById('board').classList.remove('opacity-50');
         document.querySelectorAll('.mode-tab').forEach(el => el.classList.remove('active'));
         
-        if (mode === 'analysis') document.getElementById('tab-analysis').classList.add('active');
-        else if (mode === 'puzzles') document.getElementById('tab-puzzles').classList.add('active');
-        else if (mode === 'archive') document.getElementById('tab-archive').classList.add('active');
-        else document.getElementById('tab-play').classList.add('active');
-        
-        this.clearArrows();
-        this.resetHint();
-
         const analysisIds = ['analysisControls', 'analysisPanel', 'scanBtn', 'verticalAnalysisControls'];
         const puzzleIds = ['puzzleControls', 'puzzleStatusHeader', 'puzzleFeedback', 'puzzleEngineContainer'];
         const playIds = ['playControls'];
-        const archiveIds = ['puzzleArchivePanel'];
-
+        
         const hideAll = (ids) => ids.forEach(id => document.getElementById(id)?.classList.add('d-none'));
         const showAll = (ids) => ids.forEach(id => document.getElementById(id)?.classList.remove('d-none'));
         
-        hideAll(analysisIds); hideAll(puzzleIds); hideAll(playIds); hideAll(archiveIds);
+        // Reset ALL mode-specific containers/controls and interaction state
+        hideAll(analysisIds); hideAll(puzzleIds); hideAll(playIds);
         document.getElementById('analysisPanel').classList.add('hidden'); 
+        document.getElementById('puzzleArchivePanel').classList.add('d-none');
+        document.getElementById('boardCard').classList.add('d-none'); 
+        document.getElementById('boardCard').classList.remove('opacity-50'); 
         
         const analysisListContainer = document.getElementById('analysisListContainer');
         const coachDisplay = document.getElementById('coachDisplay');
-
         const header = document.getElementById('boardHeaderContainer');
+        
+        // Reset puzzle source if leaving a puzzle tab
+        if (mode !== 'puzzles' && mode !== 'archive') {
+            Game.puzzleSource = null;
+        }
 
         if (mode === 'analysis') {
+            document.getElementById('tab-analysis').classList.add('active');
             header.classList.add('d-none');
             showAll(['analysisPanel', 'scanBtn', 'verticalAnalysisControls']);
             document.getElementById('analysisPanel').classList.remove('hidden');
+            document.getElementById('boardCard').classList.remove('d-none');
             
-            // REMOVE MOVELIST & EXPAND COACH DISPLAY
             analysisListContainer.classList.add('d-none'); 
             coachDisplay.style.flex = '1';
             
@@ -1835,24 +1950,52 @@ const GUI = {
             document.getElementById('gameTitle').innerText = "Game Analysis";
         } 
         else if (mode === 'puzzles') {
+            document.getElementById('tab-puzzles').classList.add('active');
+            
+            Game.puzzleSource = 'current';
+            // CRITICAL FIX: Load puzzles from Generated List into Current List for Play
+            Game.currentPuzzles = [...Game.generatedPuzzles];
+            
             header.classList.remove('d-none'); 
+            document.getElementById('boardCard').classList.remove('d-none');
             showAll(puzzleIds);
-            PuzzleManager.loadPuzzles();
-             document.getElementById('gameTitle').innerText = "Tactical Puzzles";
-             analysisListContainer.classList.remove('d-none');
-             coachDisplay.style.flex = 'none';
+            
+            document.getElementById('gameTitle').innerText = "Smart Puzzles";
+            analysisListContainer.classList.remove('d-none');
+            coachDisplay.style.flex = 'none';
+            
+            PuzzleManager.loadPuzzles(); 
         }
         else if (mode === 'archive') {
-            header.classList.remove('d-none');
-            showAll(archiveIds);
-            ArchiveManager.renderList();
-            document.getElementById('gameTitle').innerText = "Puzzle Archive";
-            analysisListContainer.classList.add('d-none'); // Hide the move log/list when viewing the archive panel
-            coachDisplay.style.flex = 'none';
+            document.getElementById('tab-archive').classList.add('active');
+            
+            if (Game.puzzleSource === 'archive' && Game.currentPuzzles.length > 0) {
+                // Archive Puzzles are being PLAYED
+                header.classList.remove('d-none'); 
+                document.getElementById('boardCard').classList.remove('d-none');
+                showAll(puzzleIds);
+                document.getElementById('gameTitle').innerText = "Archive Puzzles Training";
+                
+                analysisListContainer.classList.add('d-none'); 
+                coachDisplay.style.flex = 'none';
+                
+                PuzzleManager.loadPuzzles(); 
+            } else {
+                // Archive is being BROWSED (static panel mode)
+                document.getElementById('puzzleArchivePanel').classList.remove('d-none'); 
+                document.getElementById('boardCard').classList.add('d-none'); 
+                document.getElementById('gameTitle').innerText = "Puzzle Archive";
+                // Reset internal state if we navigated away from playing it
+                Game.currentPuzzles = [];
+                Game.analysisChess.reset();
+            }
         }
         else if (mode === 'play') {
+            document.getElementById('tab-play').classList.add('active');
             header.classList.remove('d-none');
+            document.getElementById('boardCard').classList.remove('d-none');
             showAll(playIds);
+            
             this.board.position(Game.playChess.fen());
             this.update(); 
             this.board.orientation(Game.playUserColor === 'w' ? 'white' : 'black');
@@ -1935,7 +2078,7 @@ const GUI = {
         this.updateMaterial();
         this.updateEvalDisplayVisibility(); 
         
-        if (Game.mode === 'puzzles' || Game.mode === 'play') {
+        if (Game.mode === 'puzzles' || Game.mode === 'archive' || Game.mode === 'play') {
             if(Game.mode === 'play' && Game.playViewIndex === -1) {
                  Engine.analyze(Game.playChess.fen()); 
             }
@@ -1969,7 +2112,7 @@ const GUI = {
     },
     
     updateMaterial: function() {
-        const chess = Game.mode === 'puzzles' ? Game.analysisChess : Game.getActiveChess();
+        const chess = Game.mode === 'puzzles' || Game.mode === 'archive' ? Game.analysisChess : Game.getActiveChess();
         const board = chess.board();
         
         const fullSet = { p:8, n:2, b:2, r:2, q:1, k:1 };
@@ -2025,7 +2168,6 @@ const GUI = {
     },
 
     renderAnalysisList: function() {
-        // This function is still needed for puzzle mode if the user wants to jump to a specific move
         const list = document.getElementById('analysisList');
         list.innerHTML = "";
         Game.analysisData.forEach((d, i) => {
@@ -2207,7 +2349,6 @@ function parseFile(file) {
             pgn: r.pgn || "", oppRating: parseInt(r.opponentRating) || 0,
             userColor: (r.userColor || 'white').toLowerCase()
         }));
-        // Use a high ID to ensure new games appear at the top
         const baseId = Date.now();
         newData.forEach((game, index) => game.id = baseId + index);
 
