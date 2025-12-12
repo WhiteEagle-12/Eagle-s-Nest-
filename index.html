@@ -46,7 +46,6 @@
         .arena { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 80px 20px 20px; overflow-y: auto; position: relative; min-height: 0; }
         .board-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 10px; position: relative; transition: all 0.3s; z-index: 5; }
         
-        /* Fullscreen Board Mode */
         .board-card.fullscreen-mode {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; max-width: none; z-index: 1000;
             padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #1e1b4b;
@@ -60,12 +59,10 @@
         .board-card.fullscreen-mode .fullscreen-exit-btn { display: block; }
         .fullscreen-exit-btn { display: none; position: absolute; top: 20px; right: 20px; z-index: 1001; }
         
-        /* Board Wrapper */
         #board-wrapper { position: relative; width: 100%; }
         #board { width: 100%; height: 100%; touch-action: none; z-index: 10; position: relative; }
         #arrowOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
         
-        /* Analysis Panel */
         .analysis-panel { 
             flex: 0 0 35vh; 
             min-height: 150px;
@@ -80,9 +77,14 @@
             z-index: 20;
         }
         .analysis-moves { flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; position: relative; }
-        .analysis-logs { width: 40%; display: flex; flex-direction: column; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; transition: width 0.3s; }
+        .analysis-logs { width: 40%; display: flex; flex-direction: column; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; transition: width 0.3s; position: relative; }
         .analysis-logs.hidden { display: none !important; }
         .analysis-panel.hidden { display: none !important; }
+        
+        .log-content { flex: 1; overflow-y: auto; padding: 5px; white-space: pre-wrap; word-break: break-word; }
+        .log-entry-sys { margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2px; }
+        .log-err { color: #ef4444; }
+        .log-warn { color: #f59e0b; }
         
         #analysisListContainer { flex: 1; overflow-y: auto; padding: 0; background: #fff; }
         .analysis-mode-hidden { display: none !important; }
@@ -146,7 +148,6 @@
             color: #ef4444; font-size: 3rem; font-weight: 900; text-transform: uppercase; text-shadow: 2px 2px 0 #fff; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* TOAST NOTIFICATION */
         .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999; }
         .custom-toast {
             background: #334155; color: white; padding: 12px 24px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);
@@ -361,8 +362,11 @@
             </div>
             
             <div class="analysis-logs hidden" id="logPanel">
-                <div class="p-2 border-bottom border-secondary bg-dark text-white small"><strong>System Log</strong></div>
-                <div class="sys-log" id="sysLog">System Initialized.</div>
+                <div class="p-2 border-bottom border-secondary bg-dark text-white small d-flex justify-content-between align-items-center">
+                    <strong>System Log</strong>
+                    <button class="btn btn-xs btn-outline-light" onclick="GUI.copyLogs()" title="Copy Logs"><i class="fa-solid fa-copy"></i></button>
+                </div>
+                <div class="log-content" id="sysLog">System Initialized.</div>
             </div>
         </div>
 
@@ -434,13 +438,20 @@ const apiKey = "";
 /**
  * UTILITIES
  */
-function log(msg) {
+function log(msg, type = 'info') {
     const box = document.getElementById('sysLog');
     const time = new Date().toLocaleTimeString().split(' ')[0];
     const div = document.createElement('div');
+    div.className = 'log-entry-sys';
+    if(type === 'error') div.classList.add('log-err');
+    if(type === 'warn') div.classList.add('log-warn');
+    
     div.innerText = `[${time}] ${msg}`;
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
+    
+    if(!window.sys_logs) window.sys_logs = [];
+    window.sys_logs.push(`[${time}] [${type.toUpperCase()}] ${msg}`);
 }
 
 function getEffectiveKey() {
@@ -454,6 +465,7 @@ function getEffectiveKey() {
 const Engine = {
     worker: null,
     isReady: false,
+    isThinking: false,
     
     init: function() {
         log("Loading Stockfish 10.0.2...");
@@ -464,12 +476,12 @@ const Engine = {
             this.worker.postMessage('setoption name UCI_ShowWDL value true'); 
             this.worker.onmessage = (e) => this.handleMessage(e.data);
             this.worker.onerror = (e) => {
-                log("Engine Worker Error: " + e.message);
+                log("Engine Worker Error: " + e.message, 'error');
                 document.getElementById('engineStatus').className = "badge bg-danger";
                 document.getElementById('engineStatus').innerText = "Failed";
             };
         } catch(e) { 
-            log("Engine Init Error: " + e); 
+            log("Engine Init Error: " + e, 'error'); 
             document.getElementById('engineStatus').className = "badge bg-danger";
             document.getElementById('engineStatus').innerText = "Failed";
         }
@@ -492,13 +504,15 @@ const Engine = {
     },
 
     stop: function() {
-        if(this.isReady) this.worker.postMessage('stop');
+        if(this.isReady) {
+            this.worker.postMessage('stop');
+            this.isThinking = false;
+        }
     },
 
     runScan: function(fen) {
         return new Promise(resolve => {
             if(!this.isReady) {
-                // If engine failed to load, return immediate neutral eval
                 resolve({ eval: "0.00", bestMove: "-", pv: "", wdl: null });
                 return;
             }
@@ -506,10 +520,11 @@ const Engine = {
             const oldHandler = this.worker.onmessage;
             this.worker.onmessage = null;
 
+            // Shorter timeout for faster scan
             const tId = setTimeout(() => {
                 this.worker.onmessage = oldHandler; 
                 resolve({ eval: "0.00", bestMove: "-", pv: "", wdl: null });
-            }, 6000); 
+            }, 5000); 
 
             let best="-", ev="0.00", pv="", wdl=null;
 
@@ -532,7 +547,8 @@ const Engine = {
             
             this.worker.postMessage('stop');
             this.worker.postMessage(`position fen ${fen}`);
-            this.worker.postMessage('go depth 14'); 
+            // Reduced depth for speed
+            this.worker.postMessage('go depth 12'); 
         });
     },
 
@@ -587,7 +603,6 @@ const Engine = {
                      if(mate !== null) mate = -mate;
                  }
                  // STRICT CHECK: Only update eval if the analyzed fen matches current board
-                 // This prevents "ghost" evals from previous tabs
                  if (Game.getActiveChess().fen().split(' ')[0] === fen.split(' ')[0]) {
                     GUI.updateEval(evalVal, mate);
                  }
@@ -598,16 +613,32 @@ const Engine = {
     },
     
     playResponse: function(fen) {
-         if(!this.isReady) return;
+         if(!this.isReady || this.isThinking) return;
+         
+         this.isThinking = true;
          this.worker.postMessage('stop');
          this.worker.postMessage(`position fen ${fen}`);
          this.worker.postMessage('go movetime 1000'); 
          
+         // Watchdog: If engine doesn't reply in 3s, force reset
+         const watchdog = setTimeout(() => {
+             if(this.isThinking) {
+                 log("Engine Timeout - Forcing Reset", 'warn');
+                 this.stop();
+                 this.isThinking = false;
+             }
+         }, 3000);
+
          const listener = (e) => {
              if(e.data.startsWith('bestmove')) {
+                 clearTimeout(watchdog);
                  const best = e.data.split(' ')[1];
                  this.worker.removeEventListener('message', listener);
-                 Game.engineMove(best);
+                 this.isThinking = false;
+                 // Prevent move if game reset in background
+                 if (Game.mode === 'play') {
+                     Game.engineMove(best);
+                 }
              }
          };
          this.worker.addEventListener('message', listener);
@@ -823,7 +854,7 @@ ${logStr}
             return false;
         } catch (e) { 
             console.error("Gemini Error", e);
-            alert("Coach Analysis Failed (Network/API). Check System Log.");
+            log("Coach Analysis Failed: " + e.message, 'error');
             return false; 
         }
     }
@@ -843,6 +874,7 @@ const Game = {
     index: -1,
     userColor: 'w',
     playUserColor: 'w', // Current user color in Computer Play
+    playViewIndex: -1, // -1 means live. 0+ means reviewing history
     analysisData: [], 
     puzzles: [], 
     mode: 'analysis',
@@ -884,7 +916,7 @@ const Game = {
         if(!success) success = this.analysisChess.load_pgn(g.pgn);
         
         if(!success) {
-            log("ERROR: PGN Parse Failed.");
+            log("ERROR: PGN Parse Failed.", 'error');
             return;
         }
         
@@ -921,6 +953,13 @@ const Game = {
     
     move: function(from, to, prom) {
         const chess = this.getActiveChess();
+        
+        // If reviewing past in play mode, snap to present first
+        if (this.mode === 'play' && this.playViewIndex !== -1) {
+            this.playViewIndex = -1; // Reset to live
+            GUI.update(); // Visually snap back
+        }
+
         // Strict legality check handled by chess.js move() returning null on invalid move
         const move = chess.move({ from: from, to: to, promotion: prom || 'q' });
         
@@ -931,6 +970,7 @@ const Game = {
                 Engine.analyze(chess.fen());
             } 
             else if (this.mode === 'play') {
+                this.playViewIndex = -1; // Ensure we are live
                 GUI.update();
                 if (chess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
                 
@@ -948,39 +988,63 @@ const Game = {
     engineMove: function(bestMoveUci) {
         if (this.mode !== 'play') return;
         
+        // Always apply engine move to live game state
         const from = bestMoveUci.substring(0,2);
         const to = bestMoveUci.substring(2,4);
         const prom = bestMoveUci.length > 4 ? bestMoveUci.substring(4,5) : 'q';
         
         this.playChess.move({ from: from, to: to, promotion: prom });
-        GUI.update();
+        
+        // Only update UI if user is watching live
+        if (this.playViewIndex === -1) {
+             GUI.update();
+        } else {
+            GUI.showToast("Engine moved (hidden)", "warn");
+        }
+        
         if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
         Engine.analyze(this.playChess.fen());
     },
     
     nav: function(dir) {
-        if (this.mode !== 'analysis') return;
-
         document.getElementById('checkmateOverlay').classList.add('d-none');
         GUI.clearArrows();
         
-        if(dir === 'next' && this.index < this.history.length - 1) {
-            this.index++;
-            this.analysisChess.move(this.history[this.index].san);
-        } else if (dir === 'prev' && this.index >= 0) {
-            this.analysisChess.undo();
-            this.index--;
-        } else if (dir === 'first') {
-            this.analysisChess.reset();
-            this.index = -1;
-        } else if (dir === 'last') {
-            while(this.index < this.history.length - 1) {
+        if (this.mode === 'analysis') {
+            if(dir === 'next' && this.index < this.history.length - 1) {
                 this.index++;
                 this.analysisChess.move(this.history[this.index].san);
+            } else if (dir === 'prev' && this.index >= 0) {
+                this.analysisChess.undo();
+                this.index--;
+            } else if (dir === 'first') {
+                this.analysisChess.reset();
+                this.index = -1;
+            } else if (dir === 'last') {
+                while(this.index < this.history.length - 1) {
+                    this.index++;
+                    this.analysisChess.move(this.history[this.index].san);
+                }
             }
+            GUI.update();
+            Engine.analyze(this.analysisChess.fen());
+        } else if (this.mode === 'play') {
+            // Play Mode Navigation = Review History (Visual Only)
+            const history = this.playChess.history();
+            if (this.playViewIndex === -1) this.playViewIndex = history.length - 1;
+            
+            if (dir === 'prev') {
+                if (this.playViewIndex >= -1) this.playViewIndex--; 
+            } else if (dir === 'next') {
+                 if (this.playViewIndex < history.length - 1) this.playViewIndex++;
+                 else this.playViewIndex = -1; // Snap to live
+            }
+            
+            // Boundary checks
+            if (this.playViewIndex < -1) this.playViewIndex = -1;
+            
+            GUI.update();
         }
-        GUI.update();
-        Engine.analyze(this.analysisChess.fen());
     }
 };
 
@@ -1359,6 +1423,12 @@ const GUI = {
                     
                     // Rule 3: Game must not be over
                     if (chess.game_over()) return false;
+                    
+                    // Rule 4: Can't move if viewing history
+                    if (Game.playViewIndex !== -1) {
+                        GUI.showToast("Return to live game to move", "warn");
+                        return false;
+                    }
                 }
 
                 if (turnColor !== pieceColor) return false;
@@ -1417,6 +1487,10 @@ const GUI = {
                 if (Game.mode === 'play') {
                      if (piece.color !== Game.playUserColor) return;
                      if (chess.turn() !== Game.playUserColor) return; // Strict turn check
+                     if (Game.playViewIndex !== -1) {
+                         GUI.showToast("Return to live game to move", "warn");
+                         return;
+                     }
                 }
                 
                 Game.selectedSquare = square;
@@ -1591,25 +1665,28 @@ const GUI = {
     // Play Mode Features
     flip: function(mode) {
         if (mode === 'play') {
-            // Switch Sides logic
+            // Visual Flip & Logic Flip
             Game.playUserColor = Game.playUserColor === 'w' ? 'b' : 'w';
             this.board.orientation(Game.playUserColor === 'w' ? 'white' : 'black');
+            GUI.clearArrows();
             
-            // If it's computer's turn now, trigger move
+            // If flipping makes it the engine's turn to move (e.g., flipping to Black when White has just moved)
             if (Game.playChess.turn() !== Game.playUserColor && !Game.playChess.game_over()) {
+                // IMPORTANT: Ensure engine moves if it's supposed to
                 Engine.playResponse(Game.playChess.fen());
             }
         } else {
             // Visual flip only for analysis
             this.board.flip();
+            GUI.clearArrows();
         }
-        this.clearArrows();
     },
 
     resetGame: function() {
         if(confirm("Start new game?")) {
             Game.playChess.reset();
             Game.playUserColor = 'w';
+            Game.playViewIndex = -1;
             this.board.orientation('white');
             document.getElementById('checkmateOverlay').classList.add('d-none');
             GUI.update();
@@ -1620,24 +1697,42 @@ const GUI = {
     undoPlayMove: function() {
         Game.playChess.undo(); 
         Game.playChess.undo(); 
+        Game.playViewIndex = -1; // Snap to live
         GUI.update();
         Engine.analyze(Game.playChess.fen());
     },
 
     update: function() {
-        const chess = Game.getActiveChess();
-        this.board.position(chess.fen());
         this.resetHint();
         this.clearArrows();
         this.updateMaterial();
-        this.updateEvalDisplayVisibility(); // Check if eval should be hidden
+        this.updateEvalDisplayVisibility(); 
         
-        if (Game.mode === 'puzzles' || Game.mode === 'play') {
-            if(Game.mode === 'play') Engine.analyze(chess.fen()); // Show eval for play mode
-            return;
+        if (Game.mode === 'puzzles') return;
+        
+        if (Game.mode === 'play') {
+             // Handle Review vs Live View
+             if (Game.playViewIndex === -1) {
+                 this.board.position(Game.playChess.fen());
+             } else {
+                 // Reconstruct state from history
+                 const history = Game.playChess.history();
+                 const temp = new Chess();
+                 for(let i=0; i<=Game.playViewIndex; i++) temp.move(history[i]);
+                 this.board.position(temp.fen());
+                 
+                 // Add visual indicator that we are in review mode
+                 this.showToast("Viewing History - Move piece to reset", "warn");
+             }
+             
+             // Eval only for live
+             if(Game.playViewIndex === -1) Engine.analyze(Game.playChess.fen());
+             return;
         }
 
         // ANALYSIS UPDATE
+        const chess = Game.getActiveChess();
+        this.board.position(chess.fen());
         const moveIdx = Game.index; 
         const ply = moveIdx + 1; 
 
@@ -1845,7 +1940,7 @@ const GUI = {
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        alert("PGN copied!");
+        GUI.showToast("PGN Copied", "success");
     },
     copyAnalysis: function() {
         if (!Game.analysisData || Game.analysisData.length === 0) { alert("No analysis available."); return; }
@@ -1860,7 +1955,17 @@ const GUI = {
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        alert("Analysis copied!");
+        GUI.showToast("Analysis Copied", "success");
+    },
+    copyLogs: function() {
+        const txt = window.sys_logs ? window.sys_logs.join('\n') : "No logs.";
+        const ta = document.createElement('textarea');
+        ta.value = txt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        GUI.showToast("System Logs Copied", "success");
     }
 };
 
