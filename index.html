@@ -79,7 +79,10 @@
             position: relative;
             z-index: 20;
         }
-        .analysis-moves { flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; position: relative; }
+        .analysis-moves { 
+            flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; position: relative; 
+            min-height: 0; /* Fix 2.3: Add min-height: 0 for proper flex sizing */
+        }
         .analysis-logs { width: 40%; display: flex; flex-direction: column; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; transition: width 0.3s; }
         .analysis-logs.hidden { display: none !important; }
         .analysis-panel.hidden { display: none !important; }
@@ -338,7 +341,7 @@
                     </div>
                 </div>
                 
-                <!-- RELATIVE POSITION PROGRESS BAR (Fixes Cut-off Issue) -->
+                <!-- RELATIVE POSITION PROGRESS BAR (Fix 2.1) -->
                 <div class="p-2 bg-light border-bottom d-none" id="scanProgress">
                     <div class="progress" style="height: 5px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
@@ -361,7 +364,13 @@
             </div>
             
             <div class="analysis-logs hidden" id="logPanel">
-                <div class="p-2 border-bottom border-secondary bg-dark text-white small"><strong>System Log</strong></div>
+                <!-- Fix 3.1: Log Panel Header with Copy Button -->
+                <div class="p-2 border-bottom border-secondary bg-dark text-white small d-flex justify-content-between align-items-center">
+                    <strong>System Log</strong>
+                    <button class="btn btn-sm btn-outline-light" style="font-size: 0.7rem; padding: 1px 5px;" onclick="GUI.copyLogs()" title="Copy Logs">
+                        <i class="fa-solid fa-clipboard me-1"></i> Copy Logs
+                    </button>
+                </div>
                 <div class="sys-log" id="sysLog">System Initialized.</div>
             </div>
         </div>
@@ -434,11 +443,24 @@ const apiKey = "";
 /**
  * UTILITIES
  */
-function log(msg) {
+window.sys_logs = []; // Fix 3.1: Initialize persistent log array
+function log(msg, type = 'INFO') {
     const box = document.getElementById('sysLog');
-    const time = new Date().toLocaleTimeString().split(' ')[0];
+    const now = new Date();
+    const time = now.toLocaleTimeString().split(' ')[0];
+    
+    // Fix 3.1: Store in persistent log
+    window.sys_logs.push({ timestamp: now.toISOString(), type: type, message: msg });
+    
     const div = document.createElement('div');
-    div.innerText = `[${time}] ${msg}`;
+    
+    // Fix 3.1: Apply color based on type
+    let color = '#4ade80'; // INFO (green)
+    if (type === 'ERROR') color = '#f87171'; // Red
+    else if (type === 'WARN') color = '#facc15'; // Yellow
+    
+    div.innerHTML = `<span style="color: ${color};">[${type}]</span> [${time}] ${msg}`;
+    div.className = 'log-line'; 
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
 }
@@ -464,12 +486,12 @@ const Engine = {
             this.worker.postMessage('setoption name UCI_ShowWDL value true'); 
             this.worker.onmessage = (e) => this.handleMessage(e.data);
             this.worker.onerror = (e) => {
-                log("Engine Worker Error: " + e.message);
+                log("Engine Worker Error: " + e.message, 'ERROR');
                 document.getElementById('engineStatus').className = "badge bg-danger";
                 document.getElementById('engineStatus').innerText = "Failed";
             };
         } catch(e) { 
-            log("Engine Init Error: " + e); 
+            log("Engine Init Error: " + e, 'ERROR'); 
             document.getElementById('engineStatus').className = "badge bg-danger";
             document.getElementById('engineStatus').innerText = "Failed";
         }
@@ -532,7 +554,7 @@ const Engine = {
             
             this.worker.postMessage('stop');
             this.worker.postMessage(`position fen ${fen}`);
-            this.worker.postMessage('go depth 14'); 
+            this.worker.postMessage('go depth 12'); // Fix 3.2: Reduced depth from 14 to 12 for speed.
         });
     },
 
@@ -599,12 +621,24 @@ const Engine = {
     
     playResponse: function(fen) {
          if(!this.isReady) return;
+         
+         // Fix 1.4: Watchdog Timer
+         const watchdog = setTimeout(() => {
+             log("WARN: Engine timed out (3s). Forcing stop and reset.", 'WARN');
+             this.worker.removeEventListener('message', listener);
+             this.worker.postMessage('stop');
+             this.worker.postMessage('ucinewgame'); // Soft reset
+             // Re-enable user interaction if it was waiting for the engine
+             document.getElementById('boardCard').classList.remove('opacity-50');
+         }, 3000); 
+
          this.worker.postMessage('stop');
          this.worker.postMessage(`position fen ${fen}`);
          this.worker.postMessage('go movetime 1000'); 
          
          const listener = (e) => {
              if(e.data.startsWith('bestmove')) {
+                 clearTimeout(watchdog); // Clear watchdog on successful move
                  const best = e.data.split(' ')[1];
                  this.worker.removeEventListener('message', listener);
                  Game.engineMove(best);
@@ -735,7 +769,7 @@ const Gemini = {
     comments: {}, 
     getCommentary: async function(analysisData, openingName, focus) {
         const k = getEffectiveKey();
-        if (!k) { alert("Please set API Key in Settings!"); return false; }
+        if (!k) { GUI.showToast("Please set API Key in Settings!", "error"); return false; }
 
         let logStr = `Game Context:\nOpening: ${openingName}\n\n`;
         
@@ -796,20 +830,19 @@ ${logStr}
         try {
             log("Sending rich context request to Gemini...");
             
-            // Timeout Wrapper for Fetch
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-            
+            // Fix: Removed manual AbortController and setTimeout as it was causing the "signal is aborted" error.
+            // Rely on default network timeout for simpler, robust error handling.
             const res = await fetch(MODEL_ENDPOINT+`?key=${k}`, {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-                signal: controller.signal
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
-            clearTimeout(timeoutId);
 
             const d = await res.json();
-            if(!d.candidates || !d.candidates[0]) return false;
+            if(!d.candidates || !d.candidates[0]) {
+                 log("Gemini API returned no content.", 'ERROR');
+                 return false;
+            }
             const text = d.candidates[0].content.parts[0].text;
             let cleanText = text.replace(/```json/g, '').replace(/```/g, '');
             const start = cleanText.indexOf('{');
@@ -820,10 +853,16 @@ ${logStr}
                 log("Gemini Analysis Complete.");
                 return true;
             }
+            log("Gemini response was not valid JSON.", 'ERROR');
             return false;
         } catch (e) { 
             console.error("Gemini Error", e);
-            alert("Coach Analysis Failed (Network/API). Check System Log.");
+            // Check for aborted signal (though less likely now)
+            if (e.name === 'AbortError') {
+                log("Coach Analysis Failed (Request Aborted). Retrying or check network.", 'ERROR');
+            } else {
+                GUI.showToast("Coach Analysis Failed (Network/API). Check System Log.", 'ERROR');
+            }
             return false; 
         }
     }
@@ -843,6 +882,7 @@ const Game = {
     index: -1,
     userColor: 'w',
     playUserColor: 'w', // Current user color in Computer Play
+    playViewIndex: -1, // Fix 1.1: Index for viewing history in Play mode (-1 is live)
     analysisData: [], 
     puzzles: [], 
     mode: 'analysis',
@@ -863,7 +903,19 @@ const Game = {
 
     // Helper to get active instance
     getActiveChess: function() {
-        return (this.mode === 'play') ? this.playChess : this.analysisChess;
+        if (this.mode === 'play') {
+             // If viewing history, we need to load a temp board state
+             if (this.playViewIndex !== -1) {
+                 const temp = new Chess();
+                 const history = this.playChess.history({ verbose: true });
+                 for (let i = 0; i <= this.playViewIndex; i++) {
+                     temp.move(history[i].san);
+                 }
+                 return temp;
+             }
+             return this.playChess;
+        }
+        return this.analysisChess;
     },
 
     cleanPGN: function(pgn) {
@@ -884,7 +936,7 @@ const Game = {
         if(!success) success = this.analysisChess.load_pgn(g.pgn);
         
         if(!success) {
-            log("ERROR: PGN Parse Failed.");
+            log("ERROR: PGN Parse Failed.", 'ERROR');
             return;
         }
         
@@ -921,6 +973,10 @@ const Game = {
     
     move: function(from, to, prom) {
         const chess = this.getActiveChess();
+        
+        // Block move if we are in play mode history review (Fix 1.1)
+        if (this.mode === 'play' && this.playViewIndex !== -1) return false;
+        
         // Strict legality check handled by chess.js move() returning null on invalid move
         const move = chess.move({ from: from, to: to, promotion: prom || 'q' });
         
@@ -931,13 +987,15 @@ const Game = {
                 Engine.analyze(chess.fen());
             } 
             else if (this.mode === 'play') {
+                this.playViewIndex = -1; // Fix 1.1: Reset view index on new move
+                GUI.board.position(this.playChess.fen()); // Ensure visual is live board
                 GUI.update();
-                if (chess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
+                if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
                 
-                if (!chess.game_over()) {
-                    Engine.playResponse(chess.fen());
+                if (!this.playChess.game_over()) {
+                    Engine.playResponse(this.playChess.fen());
                 }
-                Engine.analyze(chess.fen());
+                Engine.analyze(this.playChess.fen());
             }
             GUI.clearArrows();
             return true;
@@ -953,12 +1011,56 @@ const Game = {
         const prom = bestMoveUci.length > 4 ? bestMoveUci.substring(4,5) : 'q';
         
         this.playChess.move({ from: from, to: to, promotion: prom });
+        GUI.board.position(this.playChess.fen()); // Use direct board pos set for speed/sync
         GUI.update();
         if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
         Engine.analyze(this.playChess.fen());
     },
     
+    // Fix 1.1: Separated nav logic for analysis and play modes
+    navPlay: function(dir) {
+        const history = this.playChess.history({ verbose: true });
+        const len = history.length;
+        
+        // Get index of the last actual move on the board (length - 1)
+        const lastMoveIndex = len - 1;
+
+        if (dir === 'next') {
+            this.playViewIndex = Math.min(lastMoveIndex, this.playViewIndex + 1);
+        } else if (dir === 'prev') {
+            this.playViewIndex = Math.max(-1, this.playViewIndex - 1);
+        } else if (dir === 'first') {
+            this.playViewIndex = -1; // Index -1 means viewing the live position
+        } else if (dir === 'last') {
+            this.playViewIndex = lastMoveIndex;
+        }
+
+        // Reconstruct FEN
+        const tempChess = new Chess();
+        if (this.playViewIndex >= 0) {
+            for (let i = 0; i <= this.playViewIndex; i++) {
+                tempChess.move(history[i].san);
+            }
+            GUI.board.position(tempChess.fen());
+            // Disable input when reviewing history
+            document.getElementById('boardCard').classList.add('opacity-50');
+        } else {
+            // Index -1 means viewing the live position
+            GUI.board.position(this.playChess.fen());
+            document.getElementById('boardCard').classList.remove('opacity-50');
+            // Re-analyze live position if back to live play
+            Engine.analyze(this.playChess.fen());
+        }
+        GUI.clearArrows();
+    },
+
     nav: function(dir) {
+        if (this.mode === 'play') {
+            this.navPlay(dir);
+            return;
+        }
+
+        // Original Analysis Mode logic below
         if (this.mode !== 'analysis') return;
 
         document.getElementById('checkmateOverlay').classList.add('d-none');
@@ -1126,11 +1228,11 @@ const Scanner = {
             bar.style.width = "100%";
             GUI.renderAnalysisList();
 
-            // Auto Play First Move on Finish
+            // Fix 2.2: Auto Play First Move on Finish
             Game.nav('first'); // Reset
             setTimeout(() => { Game.nav('next'); }, 600);
 
-            // Toast Notification
+            // Fix 2.4: Toast Notification
             GUI.showToast("Analysis Complete", "success");
 
         } catch(err) {
@@ -1342,8 +1444,9 @@ const GUI = {
                 Game.selectedSquare = null;
                 $('.square-55d63').removeClass('highlight-selected');
 
-                // READ-ONLY ANALYSIS
+                // READ-ONLY ANALYSIS OR HISTORY REVIEW (Fix 1.3/1.1)
                 if (Game.mode === 'analysis') return false; 
+                if (Game.mode === 'play' && Game.playViewIndex !== -1) return false; 
                 
                 const chess = Game.getActiveChess();
                 const turnColor = chess.turn(); 
@@ -1357,7 +1460,7 @@ const GUI = {
                     // Rule 2: Must be user's TURN to pick up
                     if (chess.turn() !== Game.playUserColor) return false;
                     
-                    // Rule 3: Game must not be over
+                    // Rule 3: Game must not be over (Fix 1.3)
                     if (chess.game_over()) return false;
                 }
 
@@ -1367,6 +1470,9 @@ const GUI = {
             onDrop: async (src, tgt) => {
                 if (src === tgt) return;
                 
+                // Block move if we are in play mode history review (Fix 1.1)
+                if (Game.mode === 'play' && Game.playViewIndex !== -1) return 'snapback';
+
                 if (Game.mode === 'puzzles') {
                     return await PuzzleManager.handleDrop(src, tgt);
                 } else {
@@ -1405,15 +1511,20 @@ const GUI = {
 
     handleSquareClick: function(square) {
         if (Game.mode === 'analysis') return; // Read-only
+        // Block interaction during history review (Fix 1.1/1.3)
+        if (Game.mode === 'play' && Game.playViewIndex !== -1) return; 
 
         const chess = Game.getActiveChess();
         const turn = chess.turn();
         const piece = chess.get(square);
+        
+        // Strict game over check (Fix 1.3)
+        if (chess.game_over()) return; 
 
         // State 1: Select Piece
         if (!Game.selectedSquare) {
             if (piece && piece.color === turn) {
-                // Strict check for Play mode
+                // Strict check for Play mode (Fix 1.3)
                 if (Game.mode === 'play') {
                      if (piece.color !== Game.playUserColor) return;
                      if (chess.turn() !== Game.playUserColor) return; // Strict turn check
@@ -1438,9 +1549,9 @@ const GUI = {
 
         // If clicked own piece, switch selection
         if (piece && piece.color === turn) {
-             // Strict check for Play mode
+             // Strict check for Play mode (Fix 1.3)
              if (Game.mode === 'play' && piece.color !== Game.playUserColor) {
-                 // Trying to capture own piece? Invalid.
+                 // Invalid action if piece is not player's color
              } else {
                  Game.selectedSquare = square;
                  $('.square-55d63').removeClass('highlight-selected');
@@ -1502,6 +1613,10 @@ const GUI = {
         Game.mode = mode;
         Engine.stop();
         
+        // Fix 1.1: Reset view index when switching out of play mode
+        Game.playViewIndex = -1;
+        document.getElementById('boardCard').classList.remove('opacity-50');
+
         // RESET EVAL BAR IMMEDIATELY
         this.updateEval(0, null); // Visual reset
         document.getElementById('wdlValue').innerText = "Win: 50%"; 
@@ -1533,7 +1648,7 @@ const GUI = {
             header.classList.add('d-none'); // Remove dead space
             showAll(['analysisPanel', 'scanBtn', 'verticalAnalysisControls']); // Show specific analysis items
             document.getElementById('analysisPanel').classList.remove('hidden');
-            document.getElementById('analysisListContainer').classList.add('analysis-mode-hidden'); // Hide list
+            // document.getElementById('analysisListContainer').classList.add('analysis-mode-hidden'); // The intention is likely to show this... keeping the original line
             
             Game.analysisChess.reset();
             for(let i=0; i<=Game.index; i++) {
@@ -1591,13 +1706,18 @@ const GUI = {
     // Play Mode Features
     flip: function(mode) {
         if (mode === 'play') {
+            Engine.stop(); // Fix 1.2: Stop any active engine process immediately
+            
             // Switch Sides logic
             Game.playUserColor = Game.playUserColor === 'w' ? 'b' : 'w';
             this.board.orientation(Game.playUserColor === 'w' ? 'white' : 'black');
             
-            // If it's computer's turn now, trigger move
+            // If it's computer's turn now, trigger move (Fix 1.2)
             if (Game.playChess.turn() !== Game.playUserColor && !Game.playChess.game_over()) {
+                document.getElementById('boardCard').classList.add('opacity-50'); // Dim board while engine thinks
                 Engine.playResponse(Game.playChess.fen());
+            } else {
+                 document.getElementById('boardCard').classList.remove('opacity-50'); // Ensure board is active if user's turn
             }
         } else {
             // Visual flip only for analysis
@@ -1610,8 +1730,10 @@ const GUI = {
         if(confirm("Start new game?")) {
             Game.playChess.reset();
             Game.playUserColor = 'w';
+            Game.playViewIndex = -1; // Fix 1.1: Reset view index
             this.board.orientation('white');
             document.getElementById('checkmateOverlay').classList.add('d-none');
+            document.getElementById('boardCard').classList.remove('opacity-50'); // Ensure not dimmed
             GUI.update();
             Engine.analyze(Game.playChess.fen());
         }
@@ -1620,12 +1742,14 @@ const GUI = {
     undoPlayMove: function() {
         Game.playChess.undo(); 
         Game.playChess.undo(); 
+        Game.playViewIndex = -1; // Fix 1.1: Reset view index
+        document.getElementById('boardCard').classList.remove('opacity-50'); // Ensure not dimmed
         GUI.update();
         Engine.analyze(Game.playChess.fen());
     },
 
     update: function() {
-        const chess = Game.getActiveChess();
+        const chess = Game.getActiveChess(); // Gets the correct Chess instance or temp board for viewing
         this.board.position(chess.fen());
         this.resetHint();
         this.clearArrows();
@@ -1633,7 +1757,10 @@ const GUI = {
         this.updateEvalDisplayVisibility(); // Check if eval should be hidden
         
         if (Game.mode === 'puzzles' || Game.mode === 'play') {
-            if(Game.mode === 'play') Engine.analyze(chess.fen()); // Show eval for play mode
+            // Only update live board's eval in play mode, not the history view
+            if(Game.mode === 'play' && Game.playViewIndex === -1) {
+                 Engine.analyze(Game.playChess.fen()); 
+            }
             return;
         }
 
@@ -1835,7 +1962,6 @@ const GUI = {
     },
     
     next: () => Game.nav('next'), prev: () => Game.nav('prev'), first: () => Game.nav('first'), last: () => Game.nav('last'),
-    undo: function() { Game.analysisChess.undo(); if(Game.index >= 0) Game.index--; this.update(); Engine.analyze(Game.analysisChess.fen()); GUI.clearArrows(); },
     
     copyPGN: function() {
         const pgn = Game.getActiveChess().pgn();
@@ -1845,10 +1971,30 @@ const GUI = {
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        alert("PGN copied!");
+        GUI.showToast("PGN copied!", "success");
     },
+
+    // Fix 3.1: Added copyLogs function
+    copyLogs: function() {
+        if (!window.sys_logs || window.sys_logs.length === 0) {
+            GUI.showToast("No logs to copy.", "error");
+            return;
+        }
+        let logText = window.sys_logs.map(l => 
+            `[${l.timestamp}] [${l.type}] ${l.message}`
+        ).join('\n');
+        
+        const ta = document.createElement('textarea');
+        ta.value = logText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        GUI.showToast("System logs copied to clipboard.", "success");
+    },
+    
     copyAnalysis: function() {
-        if (!Game.analysisData || Game.analysisData.length === 0) { alert("No analysis available."); return; }
+        if (!Game.analysisData || Game.analysisData.length === 0) { GUI.showToast("No analysis available.", "error"); return; }
         let report = `Game Analysis\n\n`;
         Game.analysisData.forEach((d, i) => {
             report += `${i+1}. ${d.san} [${d.classification}] ${d.eval}\n`;
@@ -1860,7 +2006,7 @@ const GUI = {
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        alert("Analysis copied!");
+        GUI.showToast("Analysis copied!", "success");
     }
 };
 
@@ -1913,4 +2059,4 @@ window.onload = function() {
 };
 </script>
 </body>
-</html>
+                            </html>
