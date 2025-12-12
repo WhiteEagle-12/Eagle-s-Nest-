@@ -22,8 +22,8 @@
         .alpha-d2270 { position: absolute; bottom: 1px; right: 3px; font-size: 11px; line-height: 12px; }
         .numeric-fc462 { position: absolute; top: 2px; left: 2px; font-size: 11px; cursor: default; line-height: 12px; }
         
-        /* App Styles */
-        body { background-color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        /* App Styles - Permanent Light Mode */
+        body { background-color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; color: #1e1b4b; }
         .navbar { background: #1e1b4b; color: white; padding: 0.5rem 1rem; border-bottom: 1px solid #334155; flex-shrink: 0; z-index: 20; }
         .navbar-brand { color: white; font-weight: 700; font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; gap: 10px; }
         .main-layout { display: flex; flex: 1; overflow: hidden; position: relative; }
@@ -31,10 +31,10 @@
         .sidebar { width: 320px; background: white; border-right: 1px solid #cbd5e1; display: flex; flex-direction: column; z-index: 10; flex-shrink: 0; transition: margin-left 0.3s ease; }
         .sidebar.collapsed { margin-left: -320px; }
         .sidebar-header { padding: 15px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
-        .game-list { flex: 1; overflow-y: auto; }
-        .game-item { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s; font-size: 0.9rem; }
-        .game-item:hover { background: #f1f5f9; }
-        .game-item.active { background: #e0e7ff; border-left: 3px solid #4f46e5; }
+        .game-list, .puzzle-archive-list { flex: 1; overflow-y: auto; background: white;}
+        .game-item, .puzzle-item { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s; font-size: 0.9rem; }
+        .game-item:hover, .puzzle-item:hover { background: #f1f5f9; }
+        .game-item.active, .puzzle-item.active { background: #e0e7ff; border-left: 3px solid #4f46e5; }
         
         .content-area { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f8fafc; height: 100%; position: relative; }
         
@@ -43,22 +43,9 @@
         .mode-tab:hover { background: #f8fafc; color: #334155; }
         .mode-tab.active { background: #f8fafc; color: #1e1b4b; border-color: #cbd5e1; border-bottom: 1px solid #f8fafc; margin-bottom: -1px; z-index: 2; }
         
+        /* DESKTOP LAYOUT */
         .arena { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 80px 20px 20px; overflow-y: auto; position: relative; min-height: 0; }
         .board-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 10px; position: relative; transition: all 0.3s; z-index: 5; }
-        
-        /* Fullscreen Board Mode */
-        .board-card.fullscreen-mode {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; max-width: none; z-index: 1000;
-            padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #1e1b4b;
-        }
-        .board-card.fullscreen-mode #board-wrapper { 
-            height: 85vh; width: 85vh; 
-            max-width: 95vw; max-height: 85vh; 
-            margin: 0 auto; 
-        }
-        .board-card.fullscreen-mode #evalBar { display: none; }
-        .board-card.fullscreen-mode .fullscreen-exit-btn { display: block; }
-        .fullscreen-exit-btn { display: none; position: absolute; top: 20px; right: 20px; z-index: 1001; }
         
         /* Board Wrapper */
         #board-wrapper { position: relative; width: 100%; }
@@ -81,19 +68,15 @@
         }
         .analysis-moves { 
             flex: 1; border-right: 1px solid #eee; display: flex; flex-direction: column; position: relative; 
-            min-height: 0; /* Fix 2.3: Add min-height: 0 for proper flex sizing */
+            min-height: 0; 
         }
         .analysis-logs { width: 40%; display: flex; flex-direction: column; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; transition: width 0.3s; }
         .analysis-logs.hidden { display: none !important; }
         .analysis-panel.hidden { display: none !important; }
         
-        #analysisListContainer { flex: 1; overflow-y: auto; padding: 0; background: #fff; }
-        .analysis-mode-hidden { display: none !important; }
+        /* HIDE MOVE LIST */
+        #analysisListContainer { display: none !important; }
 
-        .log-entry { padding: 6px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .log-entry:hover { background-color: #f8fafc; }
-        .log-entry.active { background-color: #eef2ff; border-left: 4px solid #6366f1; }
-        
         .move-class { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
         .class-Brilliant { background-color: #1baca6; } .class-Great { background-color: #5c8bb0; } .class-Best { background-color: #96bc4b; } 
         .class-Excellent { background-color: #96bc4b; opacity: 0.8; } .class-Good { background-color: #96bc4b; opacity: 0.6; } 
@@ -126,10 +109,25 @@
         .opacity-50 { opacity: 0.5; pointer-events: none; }
         .wdl-stats { font-size: 0.7rem; color: #64748b; text-align: center; margin-top: 2px; font-family: monospace; }
         
+        /* Draggable Controls (Floating Bar) */
         #verticalAnalysisControls {
-            position: absolute; right: 15px; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 2000;
+            position: fixed; 
+            
+            /* Default Portrait Layout */
+            display: flex; flex-direction: column; gap: 10px; 
+            z-index: 2000;
             background: rgba(255, 255, 255, 0.95); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #cbd5e1;
+            cursor: grab;
         }
+
+        /* Landscape Orientation */
+        #verticalAnalysisControls.landscape {
+            flex-direction: row;
+        }
+        #verticalAnalysisControls.landscape button {
+            margin: 0;
+        }
+
         #verticalAnalysisControls button {
             width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
             border: 1px solid #e2e8f0; background: white; color: #334155;
@@ -159,14 +157,52 @@
         .custom-toast.success { background: #065f46; }
         .custom-toast.error { background: #991b1b; }
 
+        /* MOBILE OPTIMIZATION (Pro Analysis Fix) */
         @media (max-width: 768px) {
             .sidebar { position: absolute; height: 100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
             .sidebar.collapsed { margin-left: -320px; }
-            .arena { padding: 10px !important; }
-            .board-card { width: 98% !important; max-width: none; }
-            #verticalAnalysisControls { right: 5px; top: 50%; scale: 0.85; }
-            .analysis-panel { flex: 0 0 40vh; }
+            
+            /* CONTENT AREA: Stack board and analysis vertically */
+            .content-area { flex-direction: column; }
+            
+            /* ARENA: Board + Material + Controls - takes minimum vertical space */
+            .arena { 
+                padding: 5px 5px 10px 5px !important; 
+                flex: 0 0 auto; 
+                height: auto;
+            }
+            .board-card { 
+                width: 100% !important; 
+                max-width: 100%; 
+                padding: 5px;
+            }
+            #board-wrapper {
+                max-width: 95vw;
+                aspect-ratio: 1 / 1;
+                margin: 0 auto;
+            }
+            
+            /* ANALYSIS PANEL: Coach Display - takes remaining height */
+            .analysis-panel { 
+                flex: 1; 
+                min-height: 100px;
+                max-height: initial; 
+                border-top: 1px solid #cbd5e1;
+                flex-direction: column;
+            }
+            .analysis-moves {
+                flex: 1;
+                border-right: none;
+            }
+            .coach-display {
+                flex: 1; 
+                min-height: 100px;
+                max-height: initial;
+            }
             .analysis-logs { display: none !important; }
+            
+            /* Shrink controls on mobile */
+            #verticalAnalysisControls { scale: 0.9; }
         }
     </style>
 </head>
@@ -179,6 +215,8 @@
         <span class="badge bg-secondary" id="engineStatus">Engine: Init...</span>
     </div>
     <div class="d-flex gap-2">
+        <span class="badge bg-info text-dark" id="dataProfileBadge">Profile: Loading...</span>
+
         <button class="btn btn-sm btn-outline-light" onclick="GUI.toggleSettings()">
             <i class="fa-solid fa-gear"></i>
         </button>
@@ -198,7 +236,7 @@
 <div class="main-layout">
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Search opening...">
+            <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Search opening..." oninput="renderList()">
             <div class="d-flex gap-1">
                 <select class="form-select form-select-sm" id="sortSelect" onchange="renderList()">
                     <option value="recent">Recent</option>
@@ -223,11 +261,15 @@
             <div class="mode-tab" id="tab-puzzles" onclick="GUI.switchTab('puzzles')">
                 <i class="fa-solid fa-puzzle-piece me-1"></i> Smart Puzzles <span id="puzzleBadge" class="badge bg-danger rounded-pill ms-1 d-none">0</span>
             </div>
+             <div class="mode-tab" id="tab-archive" onclick="GUI.switchTab('archive')">
+                <i class="fa-solid fa-box-archive me-1"></i> Puzzle Archive <span id="archiveBadge" class="badge bg-primary rounded-pill ms-1 d-none">0</span>
+            </div>
             <div class="mode-tab" id="tab-play" onclick="GUI.switchTab('play')">
                 <i class="fa-solid fa-robot me-1"></i> Computer Play
             </div>
         </div>
-
+        
+        <!-- Draggable Controls (Fixed positioned, initialized via JS) -->
         <div id="verticalAnalysisControls" class="d-none">
             <button onclick="GUI.first()" title="First Move"><i class="fa-solid fa-backward-step"></i></button>
             <button onclick="GUI.prev()" title="Previous Move"><i class="fa-solid fa-chevron-left"></i></button>
@@ -236,88 +278,103 @@
             <div style="height: 1px; background: #e2e8f0; margin: 2px 5px;"></div>
             <button onclick="GUI.showBestMove()" title="Show Best Move" class="text-primary"><i class="fa-solid fa-star"></i></button>
             <button onclick="GUI.flip()" title="Flip Board"><i class="fa-solid fa-retweet"></i></button>
+            <!-- Orientation Toggle is injected here by JS -->
         </div>
 
         <div class="arena">
             <div class="board-card" id="boardCard">
-                <button class="btn btn-danger btn-sm fullscreen-exit-btn" onclick="GUI.toggleFullscreen()"><i class="fa-solid fa-compress"></i> Exit</button>
                 
-                <div class="d-flex justify-content-between align-items-center mb-2" id="boardHeaderContainer">
-                    <div id="boardHeaderLeft">
-                        <strong id="gameTitle" class="text-truncate d-block" style="max-width: 250px;">Practice Board</strong>
+                <!-- PUZZLE ARCHIVE PANEL -->
+                <div id="puzzleArchivePanel" class="d-none w-100 h-100" style="height: 450px !important;">
+                    <div class="sidebar-header d-flex justify-content-between align-items-center bg-light">
+                        <strong>Archived Puzzles</strong>
+                        <button class="btn btn-sm btn-success" onclick="PuzzleArchive.randomize()">
+                            <i class="fa-solid fa-dice me-1"></i> Random Puzzle
+                        </button>
                     </div>
-                    <div id="puzzleStatusHeader" class="d-none flex-grow-1 text-center">
-                        <span class="badge bg-warning text-dark" id="puzzleCountBadge">Puzzle 0/0</span>
+                    <div class="puzzle-archive-list" id="puzzleArchiveList">
+                         <div class="p-3 text-center text-muted small">Loading archive...</div>
                     </div>
-                    <div class="d-flex align-items-center gap-2" id="boardHeaderRight">
-                        <button class="btn btn-xs btn-outline-secondary" onclick="GUI.toggleFullscreen()" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
-                        <div class="form-check form-switch m-0 d-none" id="puzzleEngineContainer">
-                            <input class="form-check-input" type="checkbox" id="puzzleVsEngine" onchange="PuzzleManager.toggleEngineMode()">
-                            <label class="form-check-label small fw-bold" for="puzzleVsEngine">Vs Engine</label>
+                </div>
+
+                <!-- MAIN BOARD PANEL -->
+                <div id="mainBoardPanel">
+                     <div class="d-flex justify-content-between align-items-center mb-2" id="boardHeaderContainer">
+                        <div id="boardHeaderLeft">
+                            <strong id="gameTitle" class="text-truncate d-block" style="max-width: 250px;">Practice Board</strong>
+                        </div>
+                        <div id="puzzleStatusHeader" class="d-none flex-grow-1 text-center">
+                            <span class="badge bg-warning text-dark" id="puzzleCountBadge">Puzzle 0/0</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2" id="boardHeaderRight">
+                            <div class="form-check form-switch m-0 d-none" id="puzzleEngineContainer">
+                                <input class="form-check-input" type="checkbox" id="puzzleVsEngine" onchange="PuzzleManager.toggleEngineMode()">
+                                <label class="form-check-label small fw-bold" for="puzzleVsEngine">Vs Engine</label>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="board-wrapper">
-                    <div id="board"></div>
-                    <svg id="arrowOverlay"></svg>
-                    <div id="checkmateOverlay" class="checkmate-overlay d-none">
-                        <div class="checkmate-text">CHECKMATE</div>
-                    </div>
-                </div>
-                
-                <div id="evalContainer" class="eval-container">
-                    <div class="eval-bar-wrapper" id="evalBar">
-                        <div class="eval-fill" id="evalFill"></div>
-                    </div>
-                    <div class="d-flex justify-content-between small text-muted px-1" id="evalTextContainer">
-                        <span id="evalValue">0.00</span>
-                        <span id="wdlValue" class="wdl-stats">Win: 50%</span>
-                    </div>
-                </div>
-                
-                <div class="material-stats" id="materialDisplay">
-                    <div class="mat-side"><span class="mat-label">W Captured:</span><div class="graveyard-w" id="matWhite"></div></div>
-                    <div class="mat-side"><span class="mat-label">B Captured:</span><div class="graveyard-b" id="matBlack"></div></div>
-                </div>
-
-                <div id="puzzleFeedback" class="puzzle-feedback d-none"></div>
-
-                <!-- Analysis Controls (Hidden but ID needed for logic) -->
-                <div id="analysisControls" class="d-none"><div class="control-row"></div></div>
-
-                <div id="puzzleControls" class="d-none">
-                    <div class="control-row">
-                        <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.prev()" title="Previous Puzzle"><i class="fa-solid fa-chevron-left"></i></button>
-                        <button class="btn btn-sm btn-secondary w-50" onclick="PuzzleManager.skip()">Skip</button>
-                        <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.next()" title="Next Puzzle"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
-                    <div class="control-row mt-2">
-                         <button class="btn btn-sm btn-success w-100" onclick="GUI.hint()"><i class="fa-solid fa-lightbulb"></i> Hint</button>
-                    </div>
-                </div>
-
-                <div id="playControls" class="d-none">
-                      <div class="control-row">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="GUI.prev()"><i class="fa-solid fa-chevron-left"></i></button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="GUI.next()"><i class="fa-solid fa-chevron-right"></i></button>
-                        <button class="btn btn-sm btn-dark" onclick="GUI.flip('play')"><i class="fa-solid fa-retweet"></i> Flip Side</button>
-                    </div>
-                    <div class="control-row">
-                         <button class="btn btn-sm btn-warning w-50" onclick="GUI.undoPlayMove()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
-                         <button class="btn btn-sm btn-danger w-50" onclick="GUI.resetGame()"><i class="fa-solid fa-trash-can"></i> Reset</button>
-                    </div>
-                      <div class="control-row">
-                         <button class="btn btn-sm btn-outline-secondary w-100" onclick="GUI.copyPGN()"><i class="fa-solid fa-copy"></i> PGN</button>
-                    </div>
-                    <div class="mt-3 pt-2 border-top">
-                        <div class="d-flex justify-content-between">
-                            <label class="small fw-bold text-muted">Stockfish Strength</label>
-                            <span class="badge bg-primary" id="eloLabel">ELO: 1200</span>
+                    <div id="board-wrapper">
+                        <div id="board"></div>
+                        <svg id="arrowOverlay"></svg>
+                        <div id="checkmateOverlay" class="checkmate-overlay d-none">
+                            <div class="checkmate-text">CHECKMATE</div>
                         </div>
-                        <input type="range" class="form-range" min="0" max="20" value="5" id="skillRange" oninput="GUI.updateEloLabel(this.value); Engine.setSkill(this.value)">
                     </div>
-                </div>
+                    
+                    <div id="evalContainer" class="eval-container">
+                        <div class="eval-bar-wrapper" id="evalBar">
+                            <div class="eval-fill" id="evalFill"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted px-1" id="evalTextContainer">
+                            <span id="evalValue">0.00</span>
+                            <span id="wdlValue" class="wdl-stats">Win: 50%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="material-stats" id="materialDisplay">
+                        <div class="mat-side"><span class="mat-label">W Captured:</span><div class="graveyard-w" id="matWhite"></div></div>
+                        <div class="mat-side"><span class="mat-label">B Captured:</span><div class="graveyard-b" id="matBlack"></div></div>
+                    </div>
+
+                    <div id="puzzleFeedback" class="puzzle-feedback d-none"></div>
+
+                    <!-- Analysis Controls (Hidden but ID needed for logic) -->
+                    <div id="analysisControls" class="d-none"><div class="control-row"></div></div>
+
+                    <div id="puzzleControls" class="d-none">
+                        <div class="control-row">
+                            <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.prev()" title="Previous Puzzle"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button class="btn btn-sm btn-secondary w-50" onclick="PuzzleManager.skip()">Skip</button>
+                            <button class="btn btn-sm btn-outline-secondary w-25" onclick="PuzzleManager.next()" title="Next Puzzle"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                        <div class="control-row mt-2">
+                             <button class="btn btn-sm btn-success w-100" onclick="GUI.hint()"><i class="fa-solid fa-lightbulb"></i> Hint</button>
+                        </div>
+                    </div>
+
+                    <div id="playControls" class="d-none">
+                         <div class="control-row">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="GUI.prev()"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="GUI.next()"><i class="fa-solid fa-chevron-right"></i></button>
+                            <button class="btn btn-sm btn-dark" onclick="GUI.flip('play')"><i class="fa-solid fa-retweet"></i> Flip Side</button>
+                        </div>
+                        <div class="control-row">
+                             <button class="btn btn-sm btn-warning w-50" onclick="GUI.undoPlayMove()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+                             <button class="btn btn-sm btn-danger w-50" onclick="GUI.resetGame()"><i class="fa-solid fa-trash-can"></i> Reset</button>
+                        </div>
+                          <div class="control-row">
+                             <button class="btn btn-sm btn-outline-secondary w-100" onclick="GUI.copyPGN()"><i class="fa-solid fa-copy"></i> PGN</button>
+                        </div>
+                        <div class="mt-3 pt-2 border-top">
+                            <div class="d-flex justify-content-between">
+                                <label class="small fw-bold text-muted">Stockfish Strength</label>
+                                <span class="badge bg-primary" id="eloLabel">ELO: 1200</span>
+                            </div>
+                            <input type="range" class="form-range" min="0" max="20" value="5" id="skillRange" oninput="GUI.updateEloLabel(this.value); Engine.setSkill(this.value)">
+                        </div>
+                    </div>
+                </div> <!-- End Main Board Panel -->
 
             </div>
         </div>
@@ -341,7 +398,7 @@
                     </div>
                 </div>
                 
-                <!-- RELATIVE POSITION PROGRESS BAR (Fix 2.1) -->
+                <!-- RELATIVE POSITION PROGRESS BAR -->
                 <div class="p-2 bg-light border-bottom d-none" id="scanProgress">
                     <div class="progress" style="height: 5px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
@@ -356,15 +413,14 @@
                     </div>
                 </div>
 
-                <div id="analysisListContainer">
-                      <div class="log-container" id="analysisList">
-                        <div class="text-center text-muted mt-5 small">Select a game to start.</div>
-                    </div>
+                <!-- REMOVED: analysisListContainer -->
+                <div id="analysisListContainer" style="display: none;">
+                    <div class="log-container" id="analysisList"></div>
                 </div>
             </div>
             
             <div class="analysis-logs hidden" id="logPanel">
-                <!-- Fix 3.1: Log Panel Header with Copy Button -->
+                <!-- Log Panel Header with Copy Button -->
                 <div class="p-2 border-bottom border-secondary bg-dark text-white small d-flex justify-content-between align-items-center">
                     <strong>System Log</strong>
                     <button class="btn btn-sm btn-outline-light" style="font-size: 0.7rem; padding: 1px 5px;" onclick="GUI.copyLogs()" title="Copy Logs">
@@ -387,7 +443,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Settings</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="GUI.toggleSettings()"></button>
       </div>
       <div class="modal-body">
         <div class="form-check form-switch mb-3">
@@ -400,9 +456,15 @@
         </div>
         <hr>
         <div class="mb-3">
+            <label class="form-label small fw-bold">Data Profile ID (UID Override)</label>
+            <input type="text" id="dataProfileIdInput" class="form-control form-control-sm" placeholder="Paste UID Here...">
+            <button class="btn btn-sm btn-success mt-2 w-100" onclick="GUI.updateDataProfile()">Save Profile ID & Reload Data</button>
+            <div class="small text-muted mt-2">Current Active ID: <span id="currentActiveDataId">...</span></div>
+        </div>
+        <div class="mb-3">
             <label class="form-label small fw-bold">Gemini API Key</label>
             <input type="password" id="apiKeyInput" class="form-control form-control-sm" placeholder="Paste Key Here...">
-            <button class="btn btn-sm btn-outline-primary mt-2" onclick="localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); alert('Key Saved!')">Save Key</button>
+            <button class="btn btn-sm btn-outline-primary mt-2" onclick="localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); GUI.showToast('API Key Saved!', 'success')">Save Key</button>
         </div>
       </div>
     </div>
@@ -434,35 +496,49 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<script>
+<script type="module">
+// --- FIREBASE IMPORTS ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, query, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
 // --- CONFIG ---
 const STOCKFISH_URL = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
 const MODEL_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
 const apiKey = ""; 
 
+// --- FIREBASE GLOBALS ---
+let app, db, auth;
+let authUserId = null; // The secure Firebase authenticated UID
+let activeDataUserId = null; // The ID currently used for Firestore paths (can be overridden)
+let gamesUnsubscribe = null;
+let puzzlesUnsubscribe = null;
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
 /**
  * UTILITIES
  */
-window.sys_logs = []; // Fix 3.1: Initialize persistent log array
+window.sys_logs = []; 
 function log(msg, type = 'INFO') {
     const box = document.getElementById('sysLog');
     const now = new Date();
     const time = now.toLocaleTimeString().split(' ')[0];
     
-    // Fix 3.1: Store in persistent log
     window.sys_logs.push({ timestamp: now.toISOString(), type: type, message: msg });
     
     const div = document.createElement('div');
     
-    // Fix 3.1: Apply color based on type
     let color = '#4ade80'; // INFO (green)
     if (type === 'ERROR') color = '#f87171'; // Red
     else if (type === 'WARN') color = '#facc15'; // Yellow
     
     div.innerHTML = `<span style="color: ${color};">[${type}]</span> [${time}] ${msg}`;
     div.className = 'log-line'; 
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
+    if (box) {
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
 }
 
 function getEffectiveKey() {
@@ -520,7 +596,6 @@ const Engine = {
     runScan: function(fen) {
         return new Promise(resolve => {
             if(!this.isReady) {
-                // If engine failed to load, return immediate neutral eval
                 resolve({ eval: "0.00", bestMove: "-", pv: "", wdl: null });
                 return;
             }
@@ -554,7 +629,7 @@ const Engine = {
             
             this.worker.postMessage('stop');
             this.worker.postMessage(`position fen ${fen}`);
-            this.worker.postMessage('go depth 12'); // Fix 3.2: Reduced depth from 14 to 12 for speed.
+            this.worker.postMessage('go depth 12'); 
         });
     },
 
@@ -594,25 +669,24 @@ const Engine = {
             let cp = 0, mate = null;
             
             if(line.includes('score mate')) {
-                 const m = line.match(/score mate (-?\d+)/);
-                 if(m) mate = parseInt(m[1]);
+                const m = line.match(/score mate (-?\d+)/);
+                if(m) mate = parseInt(m[1]);
             } else if(line.includes('score cp')) {
                 const m = line.match(/score cp (-?\d+)/);
                 if(m) cp = parseInt(m[1]);
             }
 
             if (line.includes(' pv ')) {
-                 let activeColor = fen.split(' ')[1];
-                 let evalVal = cp;
-                 if(activeColor === 'b') {
-                     evalVal = -cp;
-                     if(mate !== null) mate = -mate;
-                 }
-                 // STRICT CHECK: Only update eval if the analyzed fen matches current board
-                 // This prevents "ghost" evals from previous tabs
-                 if (Game.getActiveChess().fen().split(' ')[0] === fen.split(' ')[0]) {
+                let activeColor = fen.split(' ')[1];
+                let evalVal = cp;
+                if(activeColor === 'b') {
+                    evalVal = -cp;
+                    if(mate !== null) mate = -mate;
+                }
+                // STRICT CHECK: Only update eval if the analyzed fen matches current board
+                if (Game.getActiveChess().fen().split(' ')[0] === fen.split(' ')[0]) {
                     GUI.updateEval(evalVal, mate);
-                 }
+                }
             }
             if(line.startsWith('bestmove')) this.worker.removeEventListener('message', listener);
         };
@@ -620,31 +694,30 @@ const Engine = {
     },
     
     playResponse: function(fen) {
-         if(!this.isReady) return;
-         
-         // Fix 1.4: Watchdog Timer
-         const watchdog = setTimeout(() => {
-             log("WARN: Engine timed out (3s). Forcing stop and reset.", 'WARN');
-             this.worker.removeEventListener('message', listener);
-             this.worker.postMessage('stop');
-             this.worker.postMessage('ucinewgame'); // Soft reset
-             // Re-enable user interaction if it was waiting for the engine
-             document.getElementById('boardCard').classList.remove('opacity-50');
-         }, 3000); 
+          if(!this.isReady) return;
+          
+          // FIX: Increased watchdog time from 3s to 8s
+          const watchdog = setTimeout(() => {
+              log("WARN: Engine timed out (8s). Forcing stop and reset.", 'WARN');
+              this.worker.removeEventListener('message', listener);
+              this.worker.postMessage('stop');
+              this.worker.postMessage('ucinewgame'); 
+              document.getElementById('boardCard').classList.remove('opacity-50');
+          }, 8000); 
 
-         this.worker.postMessage('stop');
-         this.worker.postMessage(`position fen ${fen}`);
-         this.worker.postMessage('go movetime 1000'); 
-         
-         const listener = (e) => {
-             if(e.data.startsWith('bestmove')) {
-                 clearTimeout(watchdog); // Clear watchdog on successful move
-                 const best = e.data.split(' ')[1];
-                 this.worker.removeEventListener('message', listener);
-                 Game.engineMove(best);
-             }
-         };
-         this.worker.addEventListener('message', listener);
+          this.worker.postMessage('stop');
+          this.worker.postMessage(`position fen ${fen}`);
+          this.worker.postMessage('go movetime 1000'); 
+          
+          const listener = (e) => {
+              if(e.data.startsWith('bestmove')) {
+                  clearTimeout(watchdog); 
+                  const best = e.data.split(' ')[1];
+                  this.worker.removeEventListener('message', listener);
+                  Game.engineMove(best);
+              }
+          };
+          this.worker.addEventListener('message', listener);
     },
 
     getTopMoves: function(fen, count) {
@@ -688,7 +761,6 @@ const HeatMap = {
         const turn = chess.turn();
         const opp = turn === 'w' ? 'b' : 'w';
         
-        // Detailed attack map: Square -> List of Pieces (e.g. 'e4' -> ['n', 'q'])
         const myDefenses = this.getDetailedAttacks(chess, turn); 
         const oppAttacks = this.getDetailedAttacks(chess, opp); 
 
@@ -711,8 +783,8 @@ const HeatMap = {
                     const defCount = defenders.length;
 
                     if (atkCount > 0) {
-                        const atkStr = attackers.join(', ');
-                        const defStr = defenders.join(', ');
+                        const atkStr = attackers.map(p => p.toUpperCase()).join(', '); 
+                        const defStr = defenders.map(p => p.toUpperCase()).join(', '); 
                         
                         let status = "Safe";
                         if (defCount === 0) {
@@ -781,15 +853,15 @@ const Gemini = {
             if(d.eval.toString().startsWith('M')) evalText = `Mate in ${d.eval.replace('M','')}`;
 
             const moveInfo = `[PLY ${i+1}] ${d.color==='w'?'White':'Black'} played ${d.san}`;
-            const engineInfo = `\n   - Best Move: ${d.bestMoveSan || '?'}`;
-            const engineLine = `\n   - PV (Engine Plan): ${d.pvSan || 'None'}`;
+            const engineInfo = `\n    - Best Move: ${d.bestMoveSan || '?'}`;
+            const engineLine = `\n    - PV (Engine Plan): ${d.pvSan || 'None'}`;
             
             const heat = d.tactics || { hanging: [], pressure: [], radar: [] };
-            let tacticalText = "\n   - Tactical Status (Before Move):\n";
-            if (heat.radar.length === 0) tacticalText += "     No immediate threats detected.";
-            else heat.radar.forEach(line => tacticalText += `     * ${line}\n`);
+            let tacticalText = "\n    - Tactical Status (Before Move):\n";
+            if (heat.radar.length === 0) tacticalText += "      No immediate threats detected.";
+            else heat.radar.forEach(line => tacticalText += `      * ${line}\n`);
 
-            const outcome = `\n   - Result: Eval ${evalText}, Class ${d.classification}`;
+            const outcome = `\n    - Result: Eval ${evalText}, Class ${d.classification}`;
             
             logStr += `${moveInfo} ${tacticalText} ${engineInfo} ${engineLine} ${outcome}\n\n`;
         });
@@ -803,7 +875,7 @@ You are a Grandmaster Chess Coach.
 For every move, I have provided:
 1. The Move & Engine Best Move.
 2. **Tactical Radar:** This gives you a heatmap of EXACTLY who is attacking and defending each piece.
-   - Example: "N at f3: Attacked by 2 (q, r), Defended by 1 (p). Status: OVERWHELMED".
+   - Example: "N at f3: Attacked by 2 (Q, R), Defended by 1 (P). Status: OVERWHELMED".
 3. **Principal Variation (PV):** The future moves the engine predicts.
 
 **CRITICAL INSTRUCTIONS:**
@@ -830,8 +902,6 @@ ${logStr}
         try {
             log("Sending rich context request to Gemini...");
             
-            // Fix: Removed manual AbortController and setTimeout as it was causing the "signal is aborted" error.
-            // Rely on default network timeout for simpler, robust error handling.
             const res = await fetch(MODEL_ENDPOINT+`?key=${k}`, {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
@@ -840,8 +910,8 @@ ${logStr}
 
             const d = await res.json();
             if(!d.candidates || !d.candidates[0]) {
-                 log("Gemini API returned no content.", 'ERROR');
-                 return false;
+                log("Gemini API returned no content.", 'ERROR');
+                return false;
             }
             const text = d.candidates[0].content.parts[0].text;
             let cleanText = text.replace(/```json/g, '').replace(/```/g, '');
@@ -857,7 +927,6 @@ ${logStr}
             return false;
         } catch (e) { 
             console.error("Gemini Error", e);
-            // Check for aborted signal (though less likely now)
             if (e.name === 'AbortError') {
                 log("Coach Analysis Failed (Request Aborted). Retrying or check network.", 'ERROR');
             } else {
@@ -869,10 +938,103 @@ ${logStr}
 };
 
 /**
+ * FIREBASE / PUZZLE ARCHIVE MANAGEMENT
+ */
+const PuzzleArchive = {
+    data: [], // Stores all archived puzzles
+    currentPuzzle: null,
+
+    // Firestore Integration for Puzzles
+    loadFromStorage: function() {
+        if (!activeDataUserId || !db) return;
+        if (puzzlesUnsubscribe) puzzlesUnsubscribe(); 
+
+        const userPuzzlesRef = collection(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`);
+        const q = query(userPuzzlesRef);
+
+        puzzlesUnsubscribe = onSnapshot(q, (snapshot) => {
+            this.data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            document.getElementById('archiveBadge').innerText = this.data.length;
+            document.getElementById('archiveBadge').classList.toggle('d-none', this.data.length === 0);
+            this.renderList();
+            log(`Loaded ${this.data.length} archived puzzles for profile: ${activeDataUserId.substring(0, 8)}...`);
+        }, (error) => {
+            log("Firestore Puzzle Snapshot Error: " + error.message, 'ERROR');
+        });
+    },
+    
+    savePuzzle: async function(puzzle) {
+        if (!activeDataUserId || !db) { log("Cannot save puzzle: Firebase not initialized.", 'ERROR'); return; }
+        const puzzleId = puzzle.id.toString();
+        const puzzleRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`, puzzleId);
+        await setDoc(puzzleRef, puzzle);
+    },
+
+    deletePuzzle: async function(id) {
+        if (!activeDataUserId || !db) { log("Cannot delete puzzle: Firebase not initialized.", 'ERROR'); return; }
+        const puzzleRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/puzzles`, id.toString());
+        await deleteDoc(puzzleRef);
+        GUI.showToast("Puzzle deleted.", "success");
+    },
+    
+    // UI Rendering and Logic
+    renderList: function() {
+        const list = document.getElementById('puzzleArchiveList');
+        list.innerHTML = "";
+        if (this.data.length === 0) {
+            list.innerHTML = '<div class="p-3 text-center text-muted small">No puzzles saved yet. Analyze a game to generate some!</div>';
+            return;
+        }
+
+        this.data.forEach(p => {
+            const div = document.createElement('div');
+            div.className = "puzzle-item rounded d-flex justify-content-between align-items-center";
+            div.innerHTML = `
+                <div onclick="PuzzleArchive.loadPuzzle('${p.id}')">
+                    <div class="fw-bold">FEN: ${p.fen.split(' ')[0]}</div>
+                    <div class="small text-muted">Solution: ${p.solution.substring(0, 4)}... • Turn: ${p.color.toUpperCase()} • Difficulty: ${p.difficulty}</div>
+                </div>
+                <button class="btn btn-sm btn-outline-danger ms-2" onclick="event.stopPropagation(); PuzzleArchive.deletePuzzle('${p.id}')" title="Delete Puzzle">
+                    <i class="fa-solid fa-trash-can fa-xs"></i>
+                </button>
+            `;
+            list.appendChild(div);
+        });
+    },
+
+    loadPuzzle: function(id) {
+        const puzzle = this.data.find(p => p.id.toString() === id.toString());
+        if (puzzle) {
+            // Load this puzzle into the PuzzleManager's state
+            Game.puzzles = [puzzle];
+            PuzzleManager.currentIdx = 0;
+            
+            // Switch tab and load the puzzle board
+            GUI.switchTab('puzzles');
+            GUI.showToast("Puzzle loaded from Archive.", "success");
+        }
+    },
+    
+    randomize: function() {
+        if (this.data.length === 0) {
+            GUI.showToast("No puzzles in archive to randomize.", "error");
+            return;
+        }
+        const randomIdx = Math.floor(Math.random() * this.data.length);
+        const randomPuzzle = this.data[randomIdx];
+        this.loadPuzzle(randomPuzzle.id);
+    }
+}
+
+
+/**
  * GAME LOGIC
  */
 const Game = {
-    data: [],
+    data: [], // Array of game objects (synced with Firestore)
     
     // TWO Separate Board States
     analysisChess: new Chess(),
@@ -881,30 +1043,62 @@ const Game = {
     history: [],
     index: -1,
     userColor: 'w',
-    playUserColor: 'w', // Current user color in Computer Play
-    playViewIndex: -1, // Fix 1.1: Index for viewing history in Play mode (-1 is live)
+    playUserColor: 'w', 
+    playViewIndex: -1, 
     analysisData: [], 
-    puzzles: [], 
+    puzzles: [], // Puzzles generated from the currently loaded game
     mode: 'analysis',
-    selectedSquare: null, // For Tap-to-Move
+    selectedSquare: null, 
     
-    // STORAGE
-    save: function() {
-        localStorage.setItem('chess_games', JSON.stringify(this.data));
-    },
-    
-    loadFromStorage: function() {
-        const d = localStorage.getItem('chess_games');
-        if(d) {
-            this.data = JSON.parse(d);
-            renderList();
-        }
+    // FIREBASE PERSISTENCE FUNCTIONS
+    saveGame: async function(game) {
+        if (!activeDataUserId || !db) { log("Cannot save: Firebase not initialized or user not logged in.", 'ERROR'); return; }
+        const gameId = game.id.toString(); 
+        const gameRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`, gameId);
+        await setDoc(gameRef, { ...game, id: gameId }); 
+        log(`Game saved to Firestore: ${game.opening} (${gameId})`);
     },
 
-    // Helper to get active instance
+    deleteGame: async function(id) {
+        if (!activeDataUserId || !db) { log("Cannot delete: Firebase not initialized or user not logged in.", 'ERROR'); return; }
+        const gameRef = doc(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`, id.toString());
+        await deleteDoc(gameRef);
+        GUI.showToast("Game deleted.", "success");
+    },
+
+    loadFromStorage: function() {
+        if (!activeDataUserId || !db) return;
+        if (gamesUnsubscribe) gamesUnsubscribe(); 
+
+        const userGamesRef = collection(db, `artifacts/${appId}/users/${activeDataUserId}/chess_games`);
+        const q = query(userGamesRef);
+
+        gamesUnsubscribe = onSnapshot(q, (snapshot) => {
+            Game.data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            Game.data.sort((a,b) => b.id.localeCompare(a.id)); 
+            renderList();
+            log(`Loaded ${Game.data.length} games for profile: ${activeDataUserId.substring(0, 8)}...`);
+
+            if (Game.data.length > 0 && Game.index === -1) {
+                Game.load(Game.data[0].id);
+            } else if (Game.data.length === 0) {
+                document.getElementById('gameList').innerHTML = '<div class="p-3 text-center text-muted small">Upload CSV or PGN to load games</div>';
+            }
+        }, (error) => {
+            log("Firestore Snapshot Error: " + error.message, 'ERROR');
+        });
+        
+        // Load puzzle archive data
+        PuzzleArchive.loadFromStorage();
+    },
+
+    // GAME LOGIC CONTINUES
     getActiveChess: function() {
         if (this.mode === 'play') {
-             // If viewing history, we need to load a temp board state
              if (this.playViewIndex !== -1) {
                  const temp = new Chess();
                  const history = this.playChess.history({ verbose: true });
@@ -925,7 +1119,7 @@ const Game = {
     },
 
     load: function(id) {
-        const g = this.data.find(x => x.id === id);
+        const g = this.data.find(x => x.id.toString() === id.toString());
         if(!g) return;
         
         log(`Loading Game ID ${id}...`);
@@ -936,7 +1130,7 @@ const Game = {
         if(!success) success = this.analysisChess.load_pgn(g.pgn);
         
         if(!success) {
-            log("ERROR: PGN Parse Failed.", 'ERROR');
+            log("ERROR: PGN Parse Failed. Make sure PGN is valid.", 'ERROR');
             return;
         }
         
@@ -950,9 +1144,7 @@ const Game = {
         this.puzzles = [];
         Gemini.comments = {};
         
-        GUI.renderAnalysisList();
-        GUI.resetCoachDisplay();
-        
+        document.getElementById('puzzleBadge').innerText = "0";
         document.getElementById('puzzleBadge').classList.add('d-none');
         document.getElementById('board').classList.remove('opacity-50');
 
@@ -974,10 +1166,8 @@ const Game = {
     move: function(from, to, prom) {
         const chess = this.getActiveChess();
         
-        // Block move if we are in play mode history review (Fix 1.1)
         if (this.mode === 'play' && this.playViewIndex !== -1) return false;
         
-        // Strict legality check handled by chess.js move() returning null on invalid move
         const move = chess.move({ from: from, to: to, promotion: prom || 'q' });
         
         if(move) {
@@ -987,8 +1177,8 @@ const Game = {
                 Engine.analyze(chess.fen());
             } 
             else if (this.mode === 'play') {
-                this.playViewIndex = -1; // Fix 1.1: Reset view index on new move
-                GUI.board.position(this.playChess.fen()); // Ensure visual is live board
+                this.playViewIndex = -1; 
+                GUI.board.position(this.playChess.fen()); 
                 GUI.update();
                 if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
                 
@@ -1011,18 +1201,17 @@ const Game = {
         const prom = bestMoveUci.length > 4 ? bestMoveUci.substring(4,5) : 'q';
         
         this.playChess.move({ from: from, to: to, promotion: prom });
-        GUI.board.position(this.playChess.fen()); // Use direct board pos set for speed/sync
+        GUI.board.position(this.playChess.fen()); 
         GUI.update();
+        document.getElementById('boardCard').classList.remove('opacity-50'); 
         if (this.playChess.in_checkmate()) document.getElementById('checkmateOverlay').classList.remove('d-none');
         Engine.analyze(this.playChess.fen());
     },
     
-    // Fix 1.1: Separated nav logic for analysis and play modes
     navPlay: function(dir) {
         const history = this.playChess.history({ verbose: true });
         const len = history.length;
         
-        // Get index of the last actual move on the board (length - 1)
         const lastMoveIndex = len - 1;
 
         if (dir === 'next') {
@@ -1030,25 +1219,23 @@ const Game = {
         } else if (dir === 'prev') {
             this.playViewIndex = Math.max(-1, this.playViewIndex - 1);
         } else if (dir === 'first') {
-            this.playViewIndex = -1; // Index -1 means viewing the live position
+            this.playViewIndex = -1; 
         } else if (dir === 'last') {
             this.playViewIndex = lastMoveIndex;
         }
 
-        // Reconstruct FEN
         const tempChess = new Chess();
         if (this.playViewIndex >= 0) {
             for (let i = 0; i <= this.playViewIndex; i++) {
                 tempChess.move(history[i].san);
             }
             GUI.board.position(tempChess.fen());
-            // Disable input when reviewing history
             document.getElementById('boardCard').classList.add('opacity-50');
+            Engine.stop();
+            GUI.updateEval(0, null);
         } else {
-            // Index -1 means viewing the live position
             GUI.board.position(this.playChess.fen());
             document.getElementById('boardCard').classList.remove('opacity-50');
-            // Re-analyze live position if back to live play
             Engine.analyze(this.playChess.fen());
         }
         GUI.clearArrows();
@@ -1060,7 +1247,6 @@ const Game = {
             return;
         }
 
-        // Original Analysis Mode logic below
         if (this.mode !== 'analysis') return;
 
         document.getElementById('checkmateOverlay').classList.add('d-none');
@@ -1099,7 +1285,7 @@ const Scanner = {
         const navBtns = document.querySelectorAll('#verticalAnalysisControls button');
 
         if (!Game.history || Game.history.length === 0) {
-            GUI.showToast("No moves to analyze!", "error");
+            GUI.showToast("No moves to analyze! Load a game first.", "error");
             return;
         }
 
@@ -1107,10 +1293,9 @@ const Scanner = {
         btn.disabled = true;
         navBtns.forEach(b => b.disabled = true);
         
-        // Force removal of hidden class and ensure z-index visibility
         progressBox.classList.remove('d-none');
         bar.style.width = '0%';
-        bar.className = "progress-bar progress-bar-striped progress-bar-animated"; // Reset class
+        bar.className = "progress-bar progress-bar-striped progress-bar-animated"; 
         
         try {
             Game.analysisData = []; 
@@ -1120,7 +1305,6 @@ const Scanner = {
             const tempChess = new Chess();
             
             for(let i=0; i<moves.length; i++) {
-                // UI Breather - Allows browser to paint progress bar
                 await new Promise(r => setTimeout(r, 20));
 
                 const fenBefore = tempChess.fen();
@@ -1170,12 +1354,11 @@ const Scanner = {
                     scoreAfter = this.parseEval(postMoveResult.eval);
                 }
 
-                let evalLoss = (moveObj.color === 'w') ? scoreBefore - scoreAfter : scoreAfter - scoreBefore;
-                if (moveObj.color === 'b') evalLoss = -evalLoss;
-                let cls = "Neutral";
                 let loss = 0;
                 if (moveObj.color === 'w') loss = scoreBefore - scoreAfter;
                 else loss = scoreAfter - scoreBefore;
+                
+                let cls = "Neutral";
                 
                 if (isBook) cls = "Book";
                 else if (isMate) cls = "Best";
@@ -1184,7 +1367,7 @@ const Scanner = {
                     const wasWinning = (moveObj.color === 'w' ? scoreBefore > 2 : scoreBefore < -2);
                     const isWinning = (moveObj.color === 'w' ? scoreAfter > 1 : scoreAfter < -1);
                     
-                    if (wasWinning && !isWinning) cls = "Missed"; // Missed Win
+                    if (wasWinning && !isWinning) cls = "Missed"; 
                     else if (loss >= 2.0) cls = "Blunder";
                     else if (loss >= 1.0) cls = "Mistake";
                     else if (loss >= 0.5) cls = "Inaccuracy";
@@ -1193,7 +1376,7 @@ const Scanner = {
                     else cls = "Best"; 
                 }
                 
-                Game.analysisData.push({
+                const analysisItem = {
                     san: moveObj.san, color: moveObj.color,
                     eval: evAfterStr, 
                     evalDiff: loss.toFixed(2),
@@ -1204,10 +1387,20 @@ const Scanner = {
                     fenBefore: fenBefore,
                     isMate: isMate,
                     tactics: tacticalSnapshot
-                });
+                };
+
+                Game.analysisData.push(analysisItem);
                 
                 if ((cls === 'Blunder' || cls === 'Mistake' || cls === 'Missed') && moveObj.color === Game.userColor) {
-                    Game.puzzles.push({ fen: fenBefore, color: moveObj.color, solution: preMoveResult.bestMove });
+                    const newPuzzle = { 
+                        id: Date.now().toString() + i, 
+                        fen: fenBefore, 
+                        color: moveObj.color, 
+                        solution: preMoveResult.bestMove,
+                        difficulty: cls 
+                    };
+                    Game.puzzles.push(newPuzzle);
+                    PuzzleArchive.savePuzzle(newPuzzle); 
                 }
 
                 bar.style.width = Math.round(((i+1)/moves.length)*50) + "%"; 
@@ -1226,20 +1419,16 @@ const Scanner = {
             await Gemini.getCommentary(Game.analysisData, "Custom Game", focus);
             
             bar.style.width = "100%";
-            GUI.renderAnalysisList();
 
-            // Fix 2.2: Auto Play First Move on Finish
-            Game.nav('first'); // Reset
+            Game.nav('first'); 
             setTimeout(() => { Game.nav('next'); }, 600);
 
-            // Fix 2.4: Toast Notification
-            GUI.showToast("Analysis Complete", "success");
+            GUI.showToast("Analysis Complete. Puzzles saved to Archive.", "success");
 
         } catch(err) {
             console.error(err);
             GUI.showToast("Analysis Failed. Check logs.", "error");
         } finally {
-            // ALWAYS re-enable buttons, even if crashed
             setTimeout(() => { 
                 progressBox.classList.add('d-none'); 
                 btn.disabled = false;
@@ -1250,7 +1439,6 @@ const Scanner = {
 
     fetchBookData: async function(fen) {
         try { 
-            // 2 Second Timeout for book fetch to prevent hanging
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 2000);
             
@@ -1301,7 +1489,7 @@ const PuzzleManager = {
         } else {
             feedback.innerHTML = '';
             if(this.activePuzzle) {
-                Game.analysisChess.load(this.activePuzzle.fen); // Use analysisChess as temp for puzzle board display
+                Game.analysisChess.load(this.activePuzzle.fen); 
                 GUI.board.position(this.activePuzzle.fen);
             }
         }
@@ -1309,7 +1497,7 @@ const PuzzleManager = {
 
     loadPuzzles: function() {
         if (Game.puzzles.length === 0) {
-            document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No puzzles generated. Please scan a game first.</span>`;
+            document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No puzzles loaded. Analyze a game or check the Archive.</span>`;
             document.getElementById('board').classList.add('opacity-50');
             return;
         }
@@ -1320,6 +1508,7 @@ const PuzzleManager = {
     },
 
     showPuzzle: function(idx) {
+        if (Game.puzzles.length === 0) return;
         if (idx >= Game.puzzles.length) {
             document.getElementById('puzzleFeedback').innerHTML = `<span class="text-primary fw-bold">Training Complete!</span>`;
             return;
@@ -1345,7 +1534,7 @@ const PuzzleManager = {
                 GUI.update();
                 Engine.analyze(Game.analysisChess.fen());
                 if (!Game.analysisChess.game_over()) {
-                      setTimeout(async () => {
+                     setTimeout(async () => {
                         const best = await Engine.getBestMove(Game.analysisChess.fen());
                         if (best) {
                             Game.analysisChess.move({ from: best.substring(0,2), to: best.substring(2,4), promotion: 'q' });
@@ -1396,7 +1585,10 @@ const PuzzleManager = {
     onSuccess: function() {
         document.getElementById('board').classList.add('puzzle-success');
         document.getElementById('puzzleFeedback').innerHTML = `<span class="text-correct"><i class="fa-solid fa-check"></i> Correct!</span>`;
-        setTimeout(() => document.getElementById('board').classList.remove('puzzle-success'), 500);
+        setTimeout(() => {
+            document.getElementById('board').classList.remove('puzzle-success');
+            if (!this.vsEngine) this.next(); 
+        }, 500);
     },
 
     onFail: function() {
@@ -1414,6 +1606,7 @@ const PuzzleManager = {
 
     next: function() {
         if (this.currentIdx < Game.puzzles.length - 1) this.showPuzzle(this.currentIdx + 1);
+        else GUI.showToast("Last puzzle completed!", "success");
     },
     
     prev: function() {
@@ -1435,32 +1628,68 @@ const GUI = {
     showEvalInPlay: true,
     
     init: function() {
+        const savedOverrideId = localStorage.getItem('activeDataUserId');
+
+        if (firebaseConfig) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    authUserId = user.uid;
+                    log(`Firebase: Authenticated as ${authUserId.substring(0, 8)}...`);
+                    
+                    if (savedOverrideId) {
+                        activeDataUserId = savedOverrideId;
+                        log(`Using saved profile ID: ${activeDataUserId.substring(0, 8)}...`);
+                    } else {
+                        activeDataUserId = authUserId;
+                    }
+                    
+                    document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...`;
+                    Game.loadFromStorage(); 
+                } else {
+                    try {
+                        log("Firebase: Attempting sign-in...");
+                        if (typeof __initial_auth_token !== 'undefined') {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) {
+                        log("Firebase Auth Error: " + e.message, 'ERROR');
+                        // Fallback in case of auth failure
+                        activeDataUserId = crypto.randomUUID();
+                        document.getElementById('dataProfileBadge').innerText = `Profile: Local (${activeDataUserId.substring(0, 8)}...)`;
+                        Game.loadFromStorage();
+                    }
+                }
+            });
+        } else {
+            log("Firebase config not found. App cannot save data.", 'WARN');
+            activeDataUserId = 'anonymous_local'; 
+            document.getElementById('dataProfileBadge').innerText = `Profile: Local (${activeDataUserId.substring(0, 8)}...)`;
+        }
+        
         this.board = Chessboard('board', {
             draggable: true,
             position: 'start',
             pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
             onDragStart: (src, p) => {
-                // Drag start cleans up tap selection
                 Game.selectedSquare = null;
                 $('.square-55d63').removeClass('highlight-selected');
 
-                // READ-ONLY ANALYSIS OR HISTORY REVIEW (Fix 1.3/1.1)
-                if (Game.mode === 'analysis') return false; 
+                if (Game.mode === 'analysis' || Game.mode === 'archive') return false; 
                 if (Game.mode === 'play' && Game.playViewIndex !== -1) return false; 
                 
                 const chess = Game.getActiveChess();
                 const turnColor = chess.turn(); 
                 const pieceColor = p.charAt(0); 
                 
-                // Computer Play Mode: Strict Side & Turn Checking
-                if (Game.mode === 'play') {
-                    // Rule 1: Must be user's color to pick up
-                    if (pieceColor !== Game.playUserColor) return false;
-                    
-                    // Rule 2: Must be user's TURN to pick up
-                    if (chess.turn() !== Game.playUserColor) return false;
-                    
-                    // Rule 3: Game must not be over (Fix 1.3)
+                if (Game.mode === 'play' || Game.mode === 'puzzles') {
+                    if (pieceColor !== Game.playUserColor && Game.mode === 'play') return false; 
+                    if (chess.turn() !== pieceColor) return false; 
                     if (chess.game_over()) return false;
                 }
 
@@ -1470,10 +1699,9 @@ const GUI = {
             onDrop: async (src, tgt) => {
                 if (src === tgt) return;
                 
-                // Block move if we are in play mode history review (Fix 1.1)
                 if (Game.mode === 'play' && Game.playViewIndex !== -1) return 'snapback';
 
-                if (Game.mode === 'puzzles') {
+                if (Game.mode === 'puzzles' || Game.mode === 'archive') {
                     return await PuzzleManager.handleDrop(src, tgt);
                 } else {
                     const res = Game.move(src, tgt);
@@ -1502,32 +1730,143 @@ const GUI = {
         if(k) document.getElementById('apiKeyInput').value = k;
         
         this.showEvalInPlay = document.getElementById('showEvalToggle').checked;
-        Game.loadFromStorage();
         this.updateEloLabel(5);
+        
+        this.setupDraggableControls();
         
         // Mobile Init
         if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
     },
+    
+    setupDraggableControls: function() {
+        const controls = document.getElementById('verticalAnalysisControls');
+        let isDragging = false;
+        let currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+
+        // Apply necessary initial styles for dragging
+        controls.style.position = 'fixed'; 
+        controls.style.cursor = 'grab';
+        
+        const savedPos = JSON.parse(localStorage.getItem('controlPos') || '{}');
+        const defaultLeft = 20; 
+        const defaultTop = 200;
+
+        if (savedPos.x !== undefined) {
+            xOffset = savedPos.x;
+            yOffset = savedPos.y;
+            controls.style.left = xOffset + 'px';
+            controls.style.top = yOffset + 'px';
+            controls.style.right = 'initial';
+            controls.style.bottom = 'initial';
+        } else {
+             // Default position for first time load
+             xOffset = defaultLeft;
+             yOffset = defaultTop;
+             controls.style.left = xOffset + 'px';
+             controls.style.top = yOffset + 'px';
+        }
+        if (savedPos.orientation === 'landscape') {
+            controls.classList.add('landscape');
+        }
+
+        const dragStart = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'I') return; // Don't drag if clicking buttons
+            
+            isDragging = true;
+            controls.style.cursor = 'grabbing';
+
+            // Ensure coordinates are relative to the viewport top/left
+            const rect = controls.getBoundingClientRect();
+            controls.style.left = rect.left + 'px';
+            controls.style.top = rect.top + 'px';
+            controls.style.right = 'initial';
+            controls.style.bottom = 'initial';
+
+            if (e.type === "touchstart") {
+                initialX = e.touches[0].clientX - xOffset;
+                initialY = e.touches[0].clientY - yOffset;
+            } else {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                e.preventDefault(); 
+            }
+        };
+
+        const drag = (e) => {
+            if (!isDragging) return;
+
+            if (e.type === "touchmove") {
+                currentX = e.touches[0].clientX - initialX;
+                currentY = e.touches[0].clientY - initialY;
+            } else {
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+            }
+
+            xOffset = currentX;
+            yOffset = currentY;
+
+            controls.style.left = currentX + 'px';
+            controls.style.top = currentY + 'px';
+        };
+
+        const dragEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            controls.style.cursor = 'grab';
+            
+            // Save new position
+            localStorage.setItem('controlPos', JSON.stringify({
+                x: xOffset,
+                y: yOffset,
+                orientation: controls.classList.contains('landscape') ? 'landscape' : 'portrait'
+            }));
+        };
+
+        controls.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        controls.addEventListener('touchstart', dragStart);
+        document.addEventListener('touchmove', drag);
+        controls.addEventListener('touchend', dragEnd);
+
+        // Add orientation toggle button inside the controls
+        const toggleBtn = document.createElement('button');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-arrows-left-right"></i>';
+        toggleBtn.title = 'Toggle Orientation';
+        toggleBtn.onclick = (e) => {
+            e.stopPropagation();
+            controls.classList.toggle('landscape');
+            dragEnd(); // Save new orientation
+            // Adjust position slightly after flip if needed, but rely on saved coordinates
+        };
+
+        const separator = controls.querySelector('div[style*="height: 1px"]');
+        if (separator) {
+            controls.appendChild(toggleBtn);
+            controls.insertBefore(toggleBtn, separator.nextSibling); 
+        } else {
+            controls.appendChild(toggleBtn);
+        }
+    },
+
 
     handleSquareClick: function(square) {
-        if (Game.mode === 'analysis') return; // Read-only
-        // Block interaction during history review (Fix 1.1/1.3)
+        if (Game.mode === 'analysis' || Game.mode === 'archive') return; 
         if (Game.mode === 'play' && Game.playViewIndex !== -1) return; 
 
         const chess = Game.getActiveChess();
         const turn = chess.turn();
         const piece = chess.get(square);
         
-        // Strict game over check (Fix 1.3)
         if (chess.game_over()) return; 
 
         // State 1: Select Piece
         if (!Game.selectedSquare) {
             if (piece && piece.color === turn) {
-                // Strict check for Play mode (Fix 1.3)
-                if (Game.mode === 'play') {
-                     if (piece.color !== Game.playUserColor) return;
-                     if (chess.turn() !== Game.playUserColor) return; // Strict turn check
+                if (Game.mode === 'play' || Game.mode === 'puzzles') {
+                     if (piece.color !== Game.playUserColor && Game.mode === 'play') return;
+                     if (chess.turn() !== piece.color) return; 
                 }
                 
                 Game.selectedSquare = square;
@@ -1540,18 +1879,14 @@ const GUI = {
         // State 2: Move or Reselect
         const source = Game.selectedSquare;
         
-        // If clicked same square, deselect
         if (source === square) {
             Game.selectedSquare = null;
             $('.square-55d63').removeClass('highlight-selected');
             return;
         }
 
-        // If clicked own piece, switch selection
         if (piece && piece.color === turn) {
-             // Strict check for Play mode (Fix 1.3)
              if (Game.mode === 'play' && piece.color !== Game.playUserColor) {
-                 // Invalid action if piece is not player's color
              } else {
                  Game.selectedSquare = square;
                  $('.square-55d63').removeClass('highlight-selected');
@@ -1561,27 +1896,19 @@ const GUI = {
         }
 
         // Attempt Move
-        if (Game.mode === 'puzzles') {
+        if (Game.mode === 'puzzles' || Game.mode === 'archive') {
              PuzzleManager.handleDrop(source, square).then(res => {
-                 if (res === 'snapback') {
-                     // Invalid puzzle move visually, but logic handled in manager
-                 } else {
-                     // Valid
+                 if (res !== 'snapback') {
                      GUI.board.position(Game.analysisChess.fen());
                  }
              });
         } else {
-            const success = Game.move(source, square);
-            if (!success) {
-                // Invalid move
-                Game.selectedSquare = null;
-                $('.square-55d63').removeClass('highlight-selected');
-            } else {
-                // Valid move
-                Game.selectedSquare = null;
-                $('.square-55d63').removeClass('highlight-selected');
-            }
+            Game.move(source, square);
         }
+        
+        // Clear selection regardless of success for tap-to-move
+        Game.selectedSquare = null;
+        $('.square-55d63').removeClass('highlight-selected');
     },
     
     showToast: function(message, type = 'success') {
@@ -1594,10 +1921,8 @@ const GUI = {
         toast.innerHTML = `${icon} <span>${message}</span>`;
         container.appendChild(toast);
         
-        // Animate In
         setTimeout(() => toast.classList.add('show'), 100);
         
-        // Animate Out & Remove
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
@@ -1609,23 +1934,51 @@ const GUI = {
         document.getElementById('eloLabel').innerText = `ELO: ~${elo}`;
     },
 
+    toggleSettings: function() {
+        document.getElementById('dataProfileIdInput').value = activeDataUserId;
+        document.getElementById('currentActiveDataId').innerText = activeDataUserId;
+        this.settingsModal.show(); 
+    },
+
+    updateDataProfile: function() {
+        const newId = document.getElementById('dataProfileIdInput').value.trim();
+        if (newId && newId !== activeDataUserId) {
+            activeDataUserId = newId;
+            localStorage.setItem('activeDataUserId', newId);
+            document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}... (Override)`;
+            document.getElementById('currentActiveDataId').innerText = activeDataUserId;
+            Game.loadFromStorage();
+            GUI.showToast(`Profile switched to ${newId.substring(0, 8)}... Reloading data.`, "success");
+        } else if (!newId && authUserId) {
+            // Revert to authenticated user
+             activeDataUserId = authUserId;
+             localStorage.removeItem('activeDataUserId');
+             document.getElementById('dataProfileBadge').innerText = `Profile: ${activeDataUserId.substring(0, 8)}...`;
+             document.getElementById('currentActiveDataId').innerText = activeDataUserId;
+             Game.loadFromStorage();
+             GUI.showToast("Profile reset to authenticated user.", "success");
+        }
+    },
+
     switchTab: function(mode) {
         Game.mode = mode;
         Engine.stop();
         
-        // Fix 1.1: Reset view index when switching out of play mode
         Game.playViewIndex = -1;
         document.getElementById('boardCard').classList.remove('opacity-50');
 
-        // RESET EVAL BAR IMMEDIATELY
-        this.updateEval(0, null); // Visual reset
+        this.updateEval(0, null); 
         document.getElementById('wdlValue').innerText = "Win: 50%"; 
 
         document.getElementById('board').classList.remove('opacity-50');
         document.querySelectorAll('.mode-tab').forEach(el => el.classList.remove('active'));
         
+        const mainBoardPanel = document.getElementById('mainBoardPanel');
+        const puzzleArchivePanel = document.getElementById('puzzleArchivePanel');
+
         if (mode === 'analysis') document.getElementById('tab-analysis').classList.add('active');
         else if (mode === 'puzzles') document.getElementById('tab-puzzles').classList.add('active');
+        else if (mode === 'archive') document.getElementById('tab-archive').classList.add('active');
         else document.getElementById('tab-play').classList.add('active');
         
         this.clearArrows();
@@ -1640,15 +1993,15 @@ const GUI = {
         
         hideAll(analysisIds); hideAll(puzzleIds); hideAll(playIds);
         document.getElementById('analysisPanel').classList.add('hidden'); 
+        mainBoardPanel.classList.remove('d-none');
+        puzzleArchivePanel.classList.add('d-none');
         
-        // Header Visiblity toggle
         const header = document.getElementById('boardHeaderContainer');
 
         if (mode === 'analysis') {
-            header.classList.add('d-none'); // Remove dead space
-            showAll(['analysisPanel', 'scanBtn', 'verticalAnalysisControls']); // Show specific analysis items
+            header.classList.add('d-none');
+            showAll(['analysisPanel', 'scanBtn', 'verticalAnalysisControls']); 
             document.getElementById('analysisPanel').classList.remove('hidden');
-            // document.getElementById('analysisListContainer').classList.add('analysis-mode-hidden'); // The intention is likely to show this... keeping the original line
             
             Game.analysisChess.reset();
             for(let i=0; i<=Game.index; i++) {
@@ -1663,7 +2016,12 @@ const GUI = {
             header.classList.remove('d-none'); 
             showAll(puzzleIds);
             PuzzleManager.loadPuzzles();
-             document.getElementById('gameTitle').innerText = "Tactical Puzzles";
+            document.getElementById('gameTitle').innerText = "Tactical Puzzles";
+        }
+        else if (mode === 'archive') {
+            header.classList.add('d-none');
+            mainBoardPanel.classList.add('d-none');
+            puzzleArchivePanel.classList.remove('d-none');
         }
         else if (mode === 'play') {
             header.classList.remove('d-none');
@@ -1677,7 +2035,6 @@ const GUI = {
         setTimeout(() => this.board.resize(), 100);
     },
     
-    toggleSettings: function() { this.settingsModal.show(); },
     toggleLogs: function(show) { document.getElementById('logPanel').classList.toggle('hidden', !show); },
     toggleEvalBar: function(show) { 
         this.showEvalInPlay = show;
@@ -1698,66 +2055,55 @@ const GUI = {
         setTimeout(() => this.board.resize(), 300);
     },
 
-    toggleFullscreen: function() {
-        document.getElementById('boardCard').classList.toggle('fullscreen-mode');
-        setTimeout(() => this.board.resize(), 100);
-    },
-
-    // Play Mode Features
     flip: function(mode) {
         if (mode === 'play') {
-            Engine.stop(); // Fix 1.2: Stop any active engine process immediately
+            Engine.stop(); 
             
-            // Switch Sides logic
             Game.playUserColor = Game.playUserColor === 'w' ? 'b' : 'w';
             this.board.orientation(Game.playUserColor === 'w' ? 'white' : 'black');
             
-            // If it's computer's turn now, trigger move (Fix 1.2)
             if (Game.playChess.turn() !== Game.playUserColor && !Game.playChess.game_over()) {
-                document.getElementById('boardCard').classList.add('opacity-50'); // Dim board while engine thinks
+                document.getElementById('boardCard').classList.add('opacity-50'); 
                 Engine.playResponse(Game.playChess.fen());
             } else {
-                 document.getElementById('boardCard').classList.remove('opacity-50'); // Ensure board is active if user's turn
+                 document.getElementById('boardCard').classList.remove('opacity-50'); 
             }
         } else {
-            // Visual flip only for analysis
             this.board.flip();
         }
         this.clearArrows();
     },
 
     resetGame: function() {
-        if(confirm("Start new game?")) {
-            Game.playChess.reset();
-            Game.playUserColor = 'w';
-            Game.playViewIndex = -1; // Fix 1.1: Reset view index
-            this.board.orientation('white');
-            document.getElementById('checkmateOverlay').classList.add('d-none');
-            document.getElementById('boardCard').classList.remove('opacity-50'); // Ensure not dimmed
-            GUI.update();
-            Engine.analyze(Game.playChess.fen());
-        }
+        Game.playChess.reset();
+        Game.playUserColor = 'w';
+        Game.playViewIndex = -1; 
+        this.board.orientation('white');
+        document.getElementById('checkmateOverlay').classList.add('d-none');
+        document.getElementById('boardCard').classList.remove('opacity-50'); 
+        GUI.update();
+        Engine.analyze(Game.playChess.fen());
+        GUI.showToast("New game started!", "success");
     },
 
     undoPlayMove: function() {
         Game.playChess.undo(); 
         Game.playChess.undo(); 
-        Game.playViewIndex = -1; // Fix 1.1: Reset view index
-        document.getElementById('boardCard').classList.remove('opacity-50'); // Ensure not dimmed
+        Game.playViewIndex = -1; 
+        document.getElementById('boardCard').classList.remove('opacity-50'); 
         GUI.update();
         Engine.analyze(Game.playChess.fen());
     },
 
     update: function() {
-        const chess = Game.getActiveChess(); // Gets the correct Chess instance or temp board for viewing
+        const chess = Game.getActiveChess(); 
         this.board.position(chess.fen());
         this.resetHint();
         this.clearArrows();
         this.updateMaterial();
-        this.updateEvalDisplayVisibility(); // Check if eval should be hidden
+        this.updateEvalDisplayVisibility(); 
         
-        if (Game.mode === 'puzzles' || Game.mode === 'play') {
-            // Only update live board's eval in play mode, not the history view
+        if (Game.mode !== 'analysis') {
             if(Game.mode === 'play' && Game.playViewIndex === -1) {
                  Engine.analyze(Game.playChess.fen()); 
             }
@@ -1791,7 +2137,7 @@ const GUI = {
     },
     
     updateMaterial: function() {
-        const chess = Game.mode === 'puzzles' ? Game.analysisChess : Game.getActiveChess();
+        const chess = Game.mode === 'puzzles' || Game.mode === 'archive' ? Game.analysisChess : Game.getActiveChess();
         const board = chess.board();
         
         const fullSet = { p:8, n:2, b:2, r:2, q:1, k:1 };
@@ -1838,7 +2184,7 @@ const GUI = {
             if(cp > 0) valText = "+" + valText;
             let val = Math.max(-500, Math.min(500, cp));
             pct = 50 + (val / 10);
-            winPct = 50 + (50 * (2 / (1 + Math.exp(-0.004 * cp)) - 1));
+            winPct = 100 / (1 + Math.pow(10, -(cp / 400)));
         }
         
         document.getElementById('evalValue').innerText = valText;
@@ -1846,36 +2192,6 @@ const GUI = {
         document.getElementById('wdlValue').innerText = `Win: ${Math.round(winPct)}%`;
     },
 
-    renderAnalysisList: function() {
-        const list = document.getElementById('analysisList');
-        list.innerHTML = "";
-        Game.analysisData.forEach((d, i) => {
-            const div = document.createElement('div');
-            div.className = 'log-entry';
-            div.id = `log-${i}`;
-            div.onclick = () => {
-                Game.analysisChess.reset();
-                for(let k=0; k<=i; k++) Game.analysisChess.move(Game.history[k].san);
-                Game.index = i;
-                GUI.update();
-                Engine.analyze(Game.analysisChess.fen());
-                GUI.clearArrows();
-            };
-            const moveNum = Math.ceil((i + 1) / 2) + (d.color === 'w' ? '.' : '...');
-            
-            div.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <span class="text-muted small me-2" style="width:25px">${moveNum}</span> 
-                    <strong>${d.san}</strong>
-                </div>
-                <div class="d-flex align-items-center gap-1">
-                    <span class="small text-muted">${d.eval}</span>
-                    <span class="move-class class-${d.classification}">${d.classification}</span>
-                </div>`;
-            list.appendChild(div);
-        });
-    },
-    
     hint: async function() {
         const fen = Game.getActiveChess().fen();
         const best = await Engine.getBestMove(fen);
@@ -1903,7 +2219,6 @@ const GUI = {
         this.clearArrows();
         this.drawArrow(from, to, '#22c55e');
         
-        // Highlight square temporarily
         $('.square-' + from).addClass('highlight-hint');
         setTimeout(() => $('.square-' + from).removeClass('highlight-hint'), 1500);
     },
@@ -1929,7 +2244,28 @@ const GUI = {
         const start = getCoords(from);
         const end = getCoords(to);
         const svg = document.getElementById('arrowOverlay');
-        const id = `arrow-${from}-${to}`;
+        const markerId = 'reusableArrowHead'; 
+        
+        let defs = svg.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.appendChild(defs);
+
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', markerId);
+            marker.setAttribute('markerWidth', '4');
+            marker.setAttribute('markerHeight', '4');
+            marker.setAttribute('refX', '2');
+            marker.setAttribute('refY', '2');
+            marker.setAttribute('orient', 'auto');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M0,0 L4,2 L0,4 Z');
+            marker.appendChild(path);
+            defs.appendChild(marker);
+        }
+        
+        defs.querySelector(`#${markerId} path`).setAttribute('fill', color);
+        
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', start.x);
         line.setAttribute('y1', start.y);
@@ -1938,27 +2274,23 @@ const GUI = {
         line.setAttribute('stroke', color);
         line.setAttribute('stroke-width', sqSize * 0.15);
         line.setAttribute('opacity', '0.7');
-        line.setAttribute('marker-end', `url(#head-${id})`);
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-        marker.setAttribute('id', `head-${id}`);
-        marker.setAttribute('markerWidth', '4');
-        marker.setAttribute('markerHeight', '4');
-        marker.setAttribute('refX', '2');
-        marker.setAttribute('refY', '2');
-        marker.setAttribute('orient', 'auto');
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M0,0 L4,2 L0,4 Z');
-        path.setAttribute('fill', color);
-        marker.appendChild(path);
-        defs.appendChild(marker);
-        svg.appendChild(defs);
+        line.setAttribute('marker-end', `url(#${markerId})`); 
+        
         svg.appendChild(line);
     },
     
     clearArrows: function() {
         const svg = document.getElementById('arrowOverlay');
-        while(svg.lastChild) svg.removeChild(svg.lastChild);
+        const defs = svg.querySelector('defs');
+
+        let child = svg.lastChild;
+        while (child) {
+            const prev = child.previousSibling;
+            if (child !== defs) {
+                svg.removeChild(child);
+            }
+            child = prev;
+        }
     },
     
     next: () => Game.nav('next'), prev: () => Game.nav('prev'), first: () => Game.nav('first'), last: () => Game.nav('last'),
@@ -1974,7 +2306,6 @@ const GUI = {
         GUI.showToast("PGN copied!", "success");
     },
 
-    // Fix 3.1: Added copyLogs function
     copyLogs: function() {
         if (!window.sys_logs || window.sys_logs.length === 0) {
             GUI.showToast("No logs to copy.", "error");
@@ -2013,50 +2344,102 @@ const GUI = {
 function importManualPGN() {
     const pgn = document.getElementById('pgnText').value;
     if(!pgn) return;
-    const newGame = { id: Date.now(), date: '-', opening: "Custom PGN", result: '?', accuracy: 0, pgn: pgn, oppRating: '?', userColor: 'white' };
-    Game.data.unshift(newGame);
-    Game.save();
-    renderList();
+    const gameId = Date.now().toString(); 
+    const newGame = { id: gameId, date: new Date().toISOString().substring(0, 10), opening: "Custom PGN", result: '?', accuracy: 0, pgn: pgn, oppRating: 0, userColor: 'white' };
+    
+    Game.saveGame(newGame); 
+
     document.getElementById('pgnModal').style.display='none';
     document.getElementById('pgnModal').classList.remove('show');
-    Game.load(newGame.id);
+    GUI.showToast("PGN imported. Loading game...", "success");
 }
+
 document.getElementById('csvInput').onchange = (e) => { if(e.target.files.length) parseFile(e.target.files[0]); };
 function parseFile(file) {
+    GUI.showToast("Parsing CSV, please wait...", "info");
     Papa.parse(file, { header: true, skipEmptyLines: true, complete: (res) => {
-        const newData = res.data.map((r, i) => ({
-            id: i, date: r.date || '-', opening: r.opening || 'Unknown',
-            result: r.result || '-', accuracy: parseFloat(r.userAccuracy) || 0,
-            pgn: r.pgn || "", oppRating: parseInt(r.opponentRating) || 0,
-            userColor: (r.userColor || 'white').toLowerCase()
-        }));
-        Game.data = [...newData, ...Game.data];
-        Game.save();
-        renderList();
+        const newData = res.data.map((r, i) => {
+            const gameId = Date.now().toString() + i;
+            return {
+                id: gameId, 
+                date: r.date || new Date().toISOString().substring(0, 10), 
+                opening: r.opening || 'Unknown Game ' + i,
+                result: r.result || '-', 
+                accuracy: parseFloat(r.userAccuracy) || 0,
+                pgn: r.pgn || "", 
+                oppRating: parseInt(r.opponentRating) || 0,
+                userColor: (r.userColor || 'white').toLowerCase()
+            };
+        });
+        
+        newData.forEach(g => Game.saveGame(g));
+        GUI.showToast(`${newData.length} games imported successfully.`, "success");
     }});
 }
+
 function renderList() {
-    const list = document.getElementById('gameList'); list.innerHTML = "";
+    const list = document.getElementById('gameList'); 
+    list.innerHTML = "";
     let arr = [...Game.data];
     const sort = document.getElementById('sortSelect').value;
+    const search = document.getElementById('searchBox').value.toLowerCase();
     
-    if(sort === 'recent') arr.sort((a,b) => b.id - a.id);
-    else if(sort === 'oldest') arr.sort((a,b) => a.id - b.id);
+    // Filter
+    if (search) {
+        arr = arr.filter(g => g.opening.toLowerCase().includes(search));
+    }
+    
+    // Sort
+    if(sort === 'recent') arr.sort((a,b) => b.id.localeCompare(a.id));
+    else if(sort === 'oldest') arr.sort((a,b) => a.id.localeCompare(b.id));
     else if(sort === 'acc_high') arr.sort((a,b) => b.accuracy - a.accuracy);
     else if(sort === 'acc_low') arr.sort((a,b) => a.accuracy - b.accuracy);
     else if(sort === 'elo_high') arr.sort((a,b) => b.oppRating - a.oppRating);
     else if(sort === 'elo_low') arr.sort((a,b) => a.oppRating - b.oppRating);
 
+    if (arr.length === 0) {
+        list.innerHTML = `<div class="p-3 text-center text-muted small">No games found matching criteria.</div>`;
+        return;
+    }
+
     arr.forEach(g => {
-        const div = document.createElement('div'); div.className = "game-item"; div.id = "g-" + g.id;
-        div.innerHTML = `<div class="d-flex justify-content-between fw-bold"><span class="text-truncate" style="max-width:180px">${g.opening}</span><span class="${g.result==='win'?'text-success':(g.result==='loss'?'text-danger':'text-muted')}">${g.result}</span></div><div class="game-meta">Acc: ${g.accuracy}% • Vs ${g.oppRating}</div>`;
-        div.onclick = () => Game.load(g.id); list.appendChild(div);
+        const div = document.createElement('div'); 
+        div.className = "game-item rounded"; 
+        div.id = "g-" + g.id;
+        const colorClass = g.result==='win'?'text-success':(g.result==='loss'?'text-danger':'text-muted');
+        div.innerHTML = `
+            <div class="d-flex justify-content-between fw-bold">
+                <span class="text-truncate" style="max-width:180px">${g.opening}</span>
+                <span class="${colorClass}">${g.result.toUpperCase()}</span>
+            </div>
+            <div class="game-meta small text-muted">Acc: ${g.accuracy}% • Vs ${g.oppRating} • Color: ${g.userColor}</div>
+            <div class="mt-1 d-flex justify-content-end">
+                <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); Game.deleteGame('${g.id}')" title="Delete Game">
+                    <i class="fa-solid fa-trash-can fa-xs"></i>
+                </button>
+            </div>
+        `;
+        div.onclick = () => {
+            document.querySelectorAll('.game-item').forEach(el => el.classList.remove('active'));
+            div.classList.add('active');
+            Game.load(g.id)
+        }; 
+        list.appendChild(div);
     });
 }
+
 window.onload = function() { 
     GUI.init();
     GUI.switchTab('analysis');
 };
+
+// --- FIX: Expose module-defined objects to the global window scope for HTML onclick handlers ---
+window.GUI = GUI;
+window.PuzzleManager = PuzzleManager;
+window.Scanner = Scanner;
+window.PuzzleArchive = PuzzleArchive; // Expose new object
+window.importManualPGN = importManualPGN; // Expose global function
+window.renderList = renderList; // Expose global function
 </script>
 </body>
-                            </html>
+</html>
