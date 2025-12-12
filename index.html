@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Arena: Grandmaster Coach</title>
     
-    <!-- Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- CSS -->
     <style>
         /*! chessboard.js v1.0.0 | (c) 2019 Chris Oakman | MIT License chessboardjs.com/license */
         .clearfix-7da63 { clear: both; }
@@ -253,7 +251,6 @@
 </head>
 <body>
 
-<!-- Navbar -->
 <nav class="navbar d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-3">
         <a class="navbar-brand" href="#"><i class="fa-solid fa-chess-knight fa-lg"></i> Chess Arena Pro</a>
@@ -304,7 +301,6 @@
             <div class="mode-tab" id="tab-puzzles" onclick="GUI.switchTab('puzzles')">
                 <i class="fa-solid fa-puzzle-piece me-1"></i> Smart Puzzles <span id="puzzleBadge" class="badge bg-danger rounded-pill ms-1 d-none">0</span>
             </div>
-            <!-- ARCHIVE TAB -->
             <div class="mode-tab" id="tab-archive" onclick="GUI.switchTab('archive')">
                 <i class="fa-solid fa-box-archive me-1"></i> Puzzle Archive <span id="archiveBadge" class="badge bg-secondary rounded-pill ms-1">0</span>
             </div>
@@ -313,7 +309,6 @@
             </div>
         </div>
 
-        <!-- Draggable Analysis Controls -->
         <div id="verticalAnalysisControls" class="d-none">
             <button onclick="GUI.first()" title="First Move"><i class="fa-solid fa-backward-step"></i></button>
             <button onclick="GUI.prev()" title="Previous Move"><i class="fa-solid fa-chevron-left"></i></button>
@@ -326,7 +321,6 @@
         </div>
 
         <div class="arena">
-            <!-- MAIN BOARD CARD (Used for Analysis, Smart Puzzles, Computer Play, and Archive Play) -->
             <div class="board-card" id="boardCard">
                 
                 <div class="d-flex justify-content-between align-items-center mb-2" id="boardHeaderContainer">
@@ -337,7 +331,6 @@
                         <span class="badge bg-warning text-dark" id="puzzleCountBadge">Puzzle 0/0</span>
                     </div>
                     <div class="d-flex align-items-center gap-2" id="boardHeaderRight">
-                        <!-- Fullscreen button removed -->
                         <div class="form-check form-switch m-0 d-none" id="puzzleEngineContainer">
                             <input class="form-check-input" type="checkbox" id="puzzleVsEngine" onchange="PuzzleManager.toggleEngineMode()">
                             <label class="form-check-label small fw-bold" for="puzzleVsEngine">Vs Engine</label>
@@ -370,7 +363,6 @@
 
                 <div id="puzzleFeedback" class="puzzle-feedback d-none"></div>
 
-                <!-- Analysis Controls (Hidden but ID needed for logic) -->
                 <div id="analysisControls" class="d-none"><div class="control-row"></div></div>
 
                 <div id="puzzleControls" class="d-none">
@@ -382,7 +374,6 @@
                     <div class="control-row mt-2">
                          <button class="btn btn-sm btn-success w-100" onclick="GUI.hint()"><i class="fa-solid fa-lightbulb"></i> Hint</button>
                     </div>
-                    <!-- Puzzle Depth Slider -->
                     <div class="mt-3 pt-2 border-top">
                         <div class="d-flex justify-content-between">
                             <label class="small fw-bold text-muted">Puzzle Depth (User Moves)</label>
@@ -416,13 +407,11 @@
 
             </div>
             
-            <!-- PUZZLE ARCHIVE MANAGEMENT PANEL (Shown when NOT playing archive puzzles) -->
             <div id="puzzleArchivePanel" class="d-none board-card" style="max-width: 600px; padding: 20px;">
                 <h5 class="fw-bold">Puzzle Archive (<span id="archiveCount">0</span> Puzzles)</h5>
                 <div class="d-flex gap-2 mb-3">
                     <button class="btn btn-primary w-100" onclick="ArchiveManager.startRandom()"><i class="fa-solid fa-shuffle"></i> Start Random Puzzle from Archive</button>
                 </div>
-                <!-- Information replacing the list of FENs -->
                 <div id="archiveListInfo" class="text-center text-muted p-3">
                      Puzzles loaded in the archive are available for random training.
                 </div>
@@ -449,7 +438,6 @@
                     </div>
                 </div>
                 
-                <!-- PROGRESS BAR -->
                 <div class="p-2 bg-light border-bottom d-none" id="scanProgress">
                     <div class="progress" style="height: 5px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
@@ -485,10 +473,8 @@
     </div>
 </div>
 
-<!-- TOAST CONTAINER -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- MODALS -->
 <div class="modal fade" id="settingsModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -513,7 +499,6 @@
         </div>
         <hr>
         <h6 class="mt-4">Data Management</h6>
-        <!-- Clear Archive button moved here -->
         <button class="btn btn-sm btn-danger w-100" onclick="ArchiveManager.clearArchive()">
             <i class="fa-solid fa-trash-can me-2"></i> Clear All Archived Puzzles
         </button>
@@ -539,7 +524,6 @@
   </div>
 </div>
 
-<!-- SCRIPTS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
@@ -550,7 +534,8 @@
 <script>
 // --- CONFIG ---
 const STOCKFISH_URL = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
-const MODEL_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
+// FIX 1: UPDATED ENDPOINT (Removed -preview-09-2025)
+const MODEL_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 const apiKey = ""; 
 
 /**
@@ -955,6 +940,14 @@ ${logStr}
             });
 
             const d = await res.json();
+            
+            // FIX 2: IMPROVED ERROR LOGGING
+            if (d.error) {
+                log(`Gemini API Error: ${d.error.message}`, 'ERROR');
+                GUI.showToast(`API Error: ${d.error.message}`, "error");
+                return false;
+            }
+
             if(!d.candidates || !d.candidates[0]) {
                 log("Gemini API returned no content.", 'ERROR');
                 return false;
