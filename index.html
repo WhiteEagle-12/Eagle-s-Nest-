@@ -973,9 +973,11 @@ ${logStr}
 const Game = {
     data: [],
     
-    // TWO Separate Board States
+    // FOUR Separate Board States for Maximum Independence
     analysisChess: new Chess(),
     playChess: new Chess(),
+    smartChess: new Chess(), // DEDICATED for Smart Puzzles
+    archiveChess: new Chess(), // DEDICATED for Archive Puzzles
     
     history: [],
     index: -1,
@@ -984,10 +986,8 @@ const Game = {
     playViewIndex: -1, 
     analysisData: [], 
     generatedPuzzles: [], // Puzzles from analysis
-    currentPuzzles: [],   // Puzzles currently loaded into the player (could be from analysis or archive)
     puzzleArchive: JSON.parse(localStorage.getItem('chess_puzzles') || '[]'), 
     mode: 'analysis',
-    puzzleSource: null, // 'current' or 'archive'
     selectedSquare: null, 
     
     // STORAGE
@@ -1007,7 +1007,7 @@ const Game = {
         }
     },
 
-    // Helper to get active instance
+    // Helper to get active instance based on mode
     getActiveChess: function() {
         if (this.mode === 'play') {
              if (this.playViewIndex !== -1) {
@@ -1019,8 +1019,11 @@ const Game = {
                  return temp;
              }
              return this.playChess;
+        } else if (this.mode === 'puzzles') {
+            return this.smartChess;
+        } else if (this.mode === 'archive') {
+            return this.archiveChess;
         }
-        // Used for analysis, smart puzzles, and archive puzzles
         return this.analysisChess;
     },
 
@@ -1064,8 +1067,6 @@ const Game = {
         
         this.analysisData = [];
         this.generatedPuzzles = [];
-        this.currentPuzzles = []; 
-        this.puzzleSource = null;
         Gemini.comments = {};
         
         GUI.renderAnalysisList();
@@ -1113,9 +1114,7 @@ const Game = {
                 }
                 Engine.analyze(this.playChess.fen());
             }
-            else if (this.mode === 'puzzles' || this.mode === 'archive') {
-                // Puzzle Manager handles the logic for both modes
-            }
+            // Puzzles/Archive have their own handlers in PuzzleManager
             GUI.clearArrows();
             return true;
         }
@@ -1406,14 +1405,29 @@ const Scanner = {
 };
 
 /**
- * PUZZLE MANAGER
+ * PUZZLE MANAGER - Manages Two Separate States
  */
 const PuzzleManager = {
-    puzzleDepth: 1, 
-    currentIdx: 0,
-    activePuzzle: null,
+    puzzleDepth: 1,
     vsEngine: false,
-    currentPlyIndex: 0, 
+    
+    // State storage for independent tabs
+    contexts: {
+        smart: { 
+            puzzles: [], 
+            index: 0, 
+            activePuzzle: null,
+            plyIndex: 0
+        },
+        archive: { 
+            puzzles: [], 
+            index: 0, 
+            activePuzzle: null,
+            plyIndex: 0
+        }
+    },
+    
+    activeContext: 'smart', // 'smart' or 'archive'
 
     init: function() { 
         this.vsEngine = false; 
@@ -1423,7 +1437,8 @@ const PuzzleManager = {
     updateDepth: function(val) {
         this.puzzleDepth = parseInt(val);
         document.getElementById('puzzleDepthLabel').innerText = `${this.puzzleDepth} Move${this.puzzleDepth === 1 ? '' : 's'}`;
-        this.currentPlyIndex = 0;
+        // Reset current ply to avoid weird state if depth changes mid-puzzle
+        this.contexts[this.activeContext].plyIndex = 0;
     },
 
     toggleEngineMode: function() {
@@ -1433,49 +1448,73 @@ const PuzzleManager = {
             feedback.innerHTML = '<span class="text-primary"><i class="fa-solid fa-robot"></i> Engine Mode: Play any move.</span>';
         } else {
             feedback.innerHTML = '';
-            if(this.activePuzzle) {
-                Game.analysisChess.load(this.activePuzzle.fen); 
-                GUI.board.position(this.activePuzzle.fen);
-                this.currentPlyIndex = 0;
+            const ctx = this.contexts[this.activeContext];
+            if(ctx.activePuzzle) {
+                const chess = Game.getActiveChess();
+                chess.load(ctx.activePuzzle.fen); 
+                GUI.board.position(ctx.activePuzzle.fen);
+                ctx.plyIndex = 0;
             }
         }
     },
+    
+    switchTo: function(contextName) {
+        this.activeContext = contextName;
+        const ctx = this.contexts[contextName];
+        
+        // Sync Data Sources
+        if (contextName === 'smart') {
+            ctx.puzzles = Game.generatedPuzzles;
+        } 
+        // Archive data is set by ArchiveManager actions, preserved here
+        
+        this.loadPuzzles();
+    },
 
     loadPuzzles: function() {
-        this.currentPlyIndex = 0;
-        const boardCard = document.getElementById('boardCard');
+        const ctx = this.contexts[this.activeContext];
+        ctx.plyIndex = 0;
+        
+        // Always remove opacity class - never disable board based on empty list
+        document.getElementById('boardCard').classList.remove('opacity-50');
 
-        if (Game.currentPuzzles.length === 0) {
-            if (Game.puzzleSource === 'archive') {
-                document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No archived puzzles available. Return to Archive tab to start random puzzles.</span>`;
+        if (ctx.puzzles.length === 0) {
+            if (this.activeContext === 'archive') {
+                document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No archived puzzles available. Return to Archive tab to start.</span>`;
             } else {
-                document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No puzzles loaded. Scan a game first.</span>`;
+                document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted">No smart puzzles loaded. Scan a game first.</span>`;
             }
             return;
         }
         
         document.getElementById('puzzleEngineContainer').classList.remove('d-none');
-        this.currentIdx = 0;
-        this.showPuzzle(0);
+        // Ensure index is valid
+        if(ctx.index >= ctx.puzzles.length) ctx.index = 0;
+        this.showPuzzle(ctx.index);
     },
 
     showPuzzle: function(idx) {
-        if (idx >= Game.currentPuzzles.length) {
+        const ctx = this.contexts[this.activeContext];
+        
+        if (idx >= ctx.puzzles.length) {
             document.getElementById('puzzleFeedback').innerHTML = `<span class="text-primary fw-bold">Training Complete!</span>`;
             return;
         }
         
-        this.currentIdx = idx;
-        this.activePuzzle = Game.currentPuzzles[idx];
+        ctx.index = idx;
+        ctx.activePuzzle = ctx.puzzles[idx];
         
-        Game.analysisChess.load(this.activePuzzle.fen);
-        GUI.board.position(this.activePuzzle.fen);
-        GUI.board.orientation(this.activePuzzle.color === 'w' ? 'white' : 'black');
+        // Load into the specific chess instance for this mode
+        const chess = Game.getActiveChess();
+        chess.load(ctx.activePuzzle.fen);
+        
+        GUI.board.position(ctx.activePuzzle.fen);
+        GUI.board.orientation(ctx.activePuzzle.color === 'w' ? 'white' : 'black');
         GUI.clearArrows();
         GUI.updateMaterial(); 
         
-        this.currentPlyIndex = 0;
-        document.getElementById('puzzleCountBadge').innerText = `Puzzle ${idx + 1}/${Game.currentPuzzles.length}`;
+        ctx.plyIndex = 0;
+        document.getElementById('puzzleCountBadge').innerText = `Puzzle ${idx + 1}/${ctx.puzzles.length}`;
         document.getElementById('puzzleFeedback').innerHTML = `<span class="text-primary fw-bold">Find the ${this.puzzleDepth} move solution.</span>`;
     },
 
@@ -1483,19 +1522,20 @@ const PuzzleManager = {
         if (Game.mode !== 'puzzles' && Game.mode !== 'archive') return 'snapback';
         
         const move = { from: source, to: target, promotion: 'q' };
+        const chess = Game.getActiveChess();
 
         if (this.vsEngine) {
-            const result = Game.analysisChess.move(move);
+            const result = chess.move(move);
             if (result) {
                 GUI.update();
-                Engine.analyze(Game.analysisChess.fen());
-                if (!Game.analysisChess.game_over()) {
+                Engine.analyze(chess.fen());
+                if (!chess.game_over()) {
                      setTimeout(async () => {
-                        const best = await Engine.getBestMove(Game.analysisChess.fen());
+                        const best = await Engine.getBestMove(chess.fen());
                         if (best) {
-                            Game.analysisChess.move({ from: best.substring(0,2), to: best.substring(2,4), promotion: 'q' });
+                            chess.move({ from: best.substring(0,2), to: best.substring(2,4), promotion: 'q' });
                             GUI.update();
-                            Engine.analyze(Game.analysisChess.fen());
+                            Engine.analyze(chess.fen());
                         }
                     }, 500);
                 }
@@ -1506,7 +1546,6 @@ const PuzzleManager = {
 
         const valid = await this.validateMove(source, target);
         if (valid) {
-            // Move is already played inside validateMove
             GUI.updateMaterial();
             return undefined;
         } else {
@@ -1515,28 +1554,27 @@ const PuzzleManager = {
     },
 
     validateMove: async function(source, target) {
-        if (!this.activePuzzle) return false;
+        const ctx = this.contexts[this.activeContext];
+        if (!ctx.activePuzzle) return false;
+        
+        const chess = Game.getActiveChess();
         
         const userUci = source + target; 
-        const isUserTurn = Game.analysisChess.turn() === this.activePuzzle.color; // Is it currently the player's turn to move?
-        const isFirstMove = (this.currentPlyIndex === 0);
+        const isFirstMove = (ctx.plyIndex === 0);
         
-        // Safety check: The user should only move on their designated puzzle turn
-        if (Game.analysisChess.turn() !== this.activePuzzle.color && !isFirstMove) {
-            // This happens when the user tries to move immediately after the engine moved, but before their next turn.
+        // Safety check
+        if (chess.turn() !== ctx.activePuzzle.color && !isFirstMove) {
             return false;
         }
 
-
         if (isFirstMove) {
-            // Validate first move against the official solution
-            const primarySol = this.activePuzzle.solution;
+            // Validate first move against official solution
+            const primarySol = ctx.activePuzzle.solution;
             if (userUci.indexOf(primarySol) === 0) {
-                // Correct primary solution
+                // Correct
             } else {
-                // Check top moves if it's an accepted alternative
                 document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Checking alternative...</span>`;
-                const topMoves = await Engine.getTopMoves(this.activePuzzle.fen, 3);
+                const topMoves = await Engine.getTopMoves(ctx.activePuzzle.fen, 3);
                 const isGood = topMoves.some(m => m.indexOf(userUci) === 0);
                 
                 if (!isGood) {
@@ -1545,9 +1583,8 @@ const PuzzleManager = {
                 }
             }
         } else {
-            // For subsequent user moves, check if the move is "good" (i.e., top 3 PV)
             document.getElementById('puzzleFeedback').innerHTML = `<span class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Checking position quality...</span>`;
-            const topMoves = await Engine.getTopMoves(Game.analysisChess.fen(), 3);
+            const topMoves = await Engine.getTopMoves(chess.fen(), 3);
             const isGood = topMoves.some(m => m.indexOf(userUci) === 0);
 
             if (!isGood) {
@@ -1556,39 +1593,34 @@ const PuzzleManager = {
             }
         }
 
-        // If validation passed, execute user's move
-        const moveResult = Game.analysisChess.move({ from: source, to: target, promotion: 'q' });
+        const moveResult = chess.move({ from: source, to: target, promotion: 'q' });
         if (!moveResult) return false; 
         
-        this.currentPlyIndex++;
+        ctx.plyIndex++;
         
-        // 1. Check if the puzzle is SOLVED after the user's move
-        // The user has made X moves, total plies is currentPlyIndex
-        if (Math.ceil(this.currentPlyIndex / 2) === this.puzzleDepth) {
+        // 1. Check if SOLVED
+        if (Math.ceil(ctx.plyIndex / 2) === this.puzzleDepth) {
              this.onSuccess();
              return true;
         }
         
-        // 2. If not solved, queue the engine response (opponent's turn)
-        if (!Game.analysisChess.game_over()) {
-            document.getElementById('boardCard').classList.add('opacity-50');
+        // 2. Queue Engine Response
+        if (!chess.game_over()) {
             document.getElementById('puzzleFeedback').innerHTML = `<span class="text-info"><i class="fa-solid fa-robot"></i> Opponent thinking...</span>`;
             
             setTimeout(async () => {
-                const engineMoveUci = await Engine.getBestMove(Game.analysisChess.fen());
-                document.getElementById('boardCard').classList.remove('opacity-50');
+                const engineMoveUci = await Engine.getBestMove(chess.fen());
                 
                 if (engineMoveUci) {
-                    Game.analysisChess.move({ from: engineMoveUci.substring(0,2), to: engineMoveUci.substring(2,4), promotion: 'q' });
-                    GUI.board.position(Game.analysisChess.fen());
+                    chess.move({ from: engineMoveUci.substring(0,2), to: engineMoveUci.substring(2,4), promotion: 'q' });
+                    GUI.board.position(chess.fen());
                     GUI.updateMaterial();
-                    this.currentPlyIndex++;
+                    ctx.plyIndex++;
                     
-                    if (Game.analysisChess.game_over()) {
-                        this.onSuccess(); // Mate or draw ends sequence successfully
+                    if (chess.game_over()) {
+                        this.onSuccess(); 
                     } else {
-                        // Ready for next user move (only required if depth > 1)
-                        const remainingMoves = this.puzzleDepth - Math.ceil(this.currentPlyIndex / 2);
+                        const remainingMoves = this.puzzleDepth - Math.ceil(ctx.plyIndex / 2);
                         document.getElementById('puzzleFeedback').innerHTML = `<span class="text-primary"><i class="fa-solid fa-brain"></i> Your Turn (${remainingMoves} moves left)</span>`;
                     }
                 } else {
@@ -1612,26 +1644,31 @@ const PuzzleManager = {
         document.getElementById('board').classList.add('puzzle-fail');
         document.getElementById('puzzleFeedback').innerHTML = `<span class="text-incorrect"><i class="fa-solid fa-xmark"></i> Incorrect. Try again.</span>`;
         setTimeout(() => {
+            const ctx = this.contexts[this.activeContext];
             document.getElementById('board').classList.remove('puzzle-fail');
             document.getElementById('puzzleFeedback').innerHTML = "";
-            if(this.activePuzzle && !this.vsEngine) {
-                Game.analysisChess.load(this.activePuzzle.fen);
-                GUI.board.position(this.activePuzzle.fen);
-                this.currentPlyIndex = 0; // Reset ply counter on fail
+            if(ctx.activePuzzle && !this.vsEngine) {
+                const chess = Game.getActiveChess();
+                chess.load(ctx.activePuzzle.fen);
+                GUI.board.position(ctx.activePuzzle.fen);
+                ctx.plyIndex = 0; 
             }
         }, 1000); 
     },
 
     next: function() {
-        if (this.currentIdx < Game.currentPuzzles.length - 1) this.showPuzzle(this.currentIdx + 1);
+        const ctx = this.contexts[this.activeContext];
+        if (ctx.index < ctx.puzzles.length - 1) this.showPuzzle(ctx.index + 1);
     },
     
     prev: function() {
-        if (this.currentIdx > 0) this.showPuzzle(this.currentIdx - 1);
+        const ctx = this.contexts[this.activeContext];
+        if (ctx.index > 0) this.showPuzzle(ctx.index - 1);
     },
     
     skip: function() {
-        if (this.currentIdx < Game.currentPuzzles.length - 1) this.showPuzzle(this.currentIdx + 1);
+        const ctx = this.contexts[this.activeContext];
+        if (ctx.index < ctx.puzzles.length - 1) this.showPuzzle(ctx.index + 1);
     }
 };
 
@@ -1644,10 +1681,12 @@ const ArchiveManager = {
             GUI.showToast("Archive is empty!", "error");
             return;
         }
-        // Shuffle and load the whole archive into currentPuzzles for training
-        Game.currentPuzzles = [...Game.puzzleArchive].sort(() => Math.random() - 0.5);
-        Game.puzzleSource = 'archive'; // Set source to archive
-        GUI.switchTab('archive'); // Re-switch to archive to trigger play mode UI
+        // Load shuffled archive into the 'archive' context of PuzzleManager
+        PuzzleManager.contexts.archive.puzzles = [...Game.puzzleArchive].sort(() => Math.random() - 0.5);
+        PuzzleManager.contexts.archive.index = 0;
+        
+        Game.puzzleSource = 'archive'; // Flag to indicate we are actively playing archive
+        GUI.switchTab('archive'); 
     },
 
     clearArchive: function() {
@@ -1657,11 +1696,11 @@ const ArchiveManager = {
             this.renderList(); 
             GUI.updateArchiveCount();
             GUI.showToast("Puzzle archive cleared.", "success");
-            // If currently playing the archive, reset the state
+            
+            PuzzleManager.contexts.archive.puzzles = [];
             if (Game.puzzleSource === 'archive') {
-                Game.currentPuzzles = [];
                 Game.puzzleSource = null;
-                GUI.switchTab('archive'); // Go back to management view
+                GUI.switchTab('archive'); // Return to list view
             }
         }
     },
@@ -1852,7 +1891,7 @@ const GUI = {
 
         if (Game.mode === 'puzzles' || Game.mode === 'archive') {
              PuzzleManager.handleDrop(source, square).then(res => {
-                 if (res !== 'snapback') GUI.board.position(Game.analysisChess.fen());
+                 if (res !== 'snapback') GUI.board.position(Game.getActiveChess().fen());
              });
         } else {
             const success = Game.move(source, square);
@@ -1914,22 +1953,16 @@ const GUI = {
         const hideAll = (ids) => ids.forEach(id => document.getElementById(id)?.classList.add('d-none'));
         const showAll = (ids) => ids.forEach(id => document.getElementById(id)?.classList.remove('d-none'));
         
-        // Reset ALL mode-specific containers/controls and interaction state
         hideAll(analysisIds); hideAll(puzzleIds); hideAll(playIds);
         document.getElementById('analysisPanel').classList.add('hidden'); 
         document.getElementById('puzzleArchivePanel').classList.add('d-none');
         document.getElementById('boardCard').classList.add('d-none'); 
-        document.getElementById('boardCard').classList.remove('opacity-50'); 
+        document.getElementById('boardCard').classList.remove('opacity-50'); // Ensure board is NEVER disabled
         
         const analysisListContainer = document.getElementById('analysisListContainer');
         const coachDisplay = document.getElementById('coachDisplay');
         const header = document.getElementById('boardHeaderContainer');
         
-        // Reset puzzle source if leaving a puzzle tab
-        if (mode !== 'puzzles' && mode !== 'archive') {
-            Game.puzzleSource = null;
-        }
-
         if (mode === 'analysis') {
             document.getElementById('tab-analysis').classList.add('active');
             header.classList.add('d-none');
@@ -1952,10 +1985,6 @@ const GUI = {
         else if (mode === 'puzzles') {
             document.getElementById('tab-puzzles').classList.add('active');
             
-            Game.puzzleSource = 'current';
-            // CRITICAL FIX: Load puzzles from Generated List into Current List for Play
-            Game.currentPuzzles = [...Game.generatedPuzzles];
-            
             header.classList.remove('d-none'); 
             document.getElementById('boardCard').classList.remove('d-none');
             showAll(puzzleIds);
@@ -1964,12 +1993,12 @@ const GUI = {
             analysisListContainer.classList.remove('d-none');
             coachDisplay.style.flex = 'none';
             
-            PuzzleManager.loadPuzzles(); 
+            PuzzleManager.switchTo('smart'); // Switch to Smart Puzzles context
         }
         else if (mode === 'archive') {
             document.getElementById('tab-archive').classList.add('active');
             
-            if (Game.puzzleSource === 'archive' && Game.currentPuzzles.length > 0) {
+            if (Game.puzzleSource === 'archive') {
                 // Archive Puzzles are being PLAYED
                 header.classList.remove('d-none'); 
                 document.getElementById('boardCard').classList.remove('d-none');
@@ -1979,14 +2008,13 @@ const GUI = {
                 analysisListContainer.classList.add('d-none'); 
                 coachDisplay.style.flex = 'none';
                 
-                PuzzleManager.loadPuzzles(); 
+                PuzzleManager.switchTo('archive'); // Switch to Archive Puzzles context
             } else {
                 // Archive is being BROWSED (static panel mode)
                 document.getElementById('puzzleArchivePanel').classList.remove('d-none'); 
                 document.getElementById('boardCard').classList.add('d-none'); 
                 document.getElementById('gameTitle').innerText = "Puzzle Archive";
-                // Reset internal state if we navigated away from playing it
-                Game.currentPuzzles = [];
+                // Reset state
                 Game.analysisChess.reset();
             }
         }
@@ -2112,7 +2140,7 @@ const GUI = {
     },
     
     updateMaterial: function() {
-        const chess = Game.mode === 'puzzles' || Game.mode === 'archive' ? Game.analysisChess : Game.getActiveChess();
+        const chess = Game.getActiveChess();
         const board = chess.board();
         
         const fullSet = { p:8, n:2, b:2, r:2, q:1, k:1 };
