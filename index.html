@@ -547,15 +547,30 @@ function log(msg, type = 'INFO') {
     const now = new Date();
     const time = now.toLocaleTimeString().split(' ')[0];
     
-    window.sys_logs.push({ timestamp: now.toISOString(), type: type, message: msg });
+    // Support logging objects by converting to string for display, but keeping object for console
+    let displayMsg = msg;
+    if (typeof msg === 'object') {
+        console.log(`[${type}]`, msg); // Log full object to console for inspection
+        try {
+            displayMsg = JSON.stringify(msg);
+        } catch(e) { displayMsg = "[Object]"; }
+    } else {
+        console.log(`[${type}] ${msg}`);
+    }
+
+    window.sys_logs.push({ timestamp: now.toISOString(), type: type, message: displayMsg });
     
     const div = document.createElement('div');
     
     let color = '#4ade80'; 
     if (type === 'ERROR') color = '#f87171'; 
     else if (type === 'WARN') color = '#facc15'; 
-    
-    div.innerHTML = `<span style="color: ${color};">[${type}]</span> [${time}] ${msg}`;
+    else if (type === 'DEBUG') color = '#60a5fa';
+
+    // Truncate very long messages for UI to prevent lag, but keep full in memory/console
+    let uiMsg = displayMsg.length > 300 ? displayMsg.substring(0, 300) + '... (See Console)' : displayMsg;
+
+    div.innerHTML = `<span style="color: ${color};">[${type}]</span> [${time}] ${uiMsg}`;
     div.className = 'log-line'; 
     if(box) {
         box.appendChild(div);
@@ -928,15 +943,22 @@ You are a Chess Coach. Use the provided timeline data to give specific, fact-bas
 1. **Use the "WHAT HAPPENED" data:** If it says "Captured Rook", mention it ("You grabbed the Rook!"). If it says "FORK", call it out.
 2. **Explain Mistakes:** If the Engine note says "Better: d5 (Delivers Check)", explain: "You played [move], but d5 was better because it delivers a check."
 3. **Be Natural:** Speak like a human coach. "Nice fork!", "Ouch, you hung that piece."
+4. **FORMAT:** Return ONLY raw JSON. No Markdown formatting. No introductory text.
 
-**JSON:** { "1": {"analysis": "..."} }
+**EXPECTED JSON STRUCTURE:**
+{
+  "1": {"analysis": "Comment for move 1..."},
+  "2": {"analysis": "Comment for move 2..."}
+}
 
 **TIMELINE:**
 ${timeline}
         `;
 
         try {
-            log("Sending Analysis...");
+            log("Sending Analysis Request...", 'INFO');
+            log({ prompt_length: prompt.length, prompt_preview: prompt.substring(0, 100) + "..." }, 'DEBUG');
+
             const res = await fetch(MODEL_ENDPOINT+`?key=${k}`, {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
@@ -947,7 +969,7 @@ ${timeline}
 
             // 1. Check for API Errors (Quota, Invalid Key, etc.)
             if(d.error) {
-                console.error("Gemini API Error:", d.error);
+                log(d.error, 'ERROR');
                 GUI.showToast(`AI Error: ${d.error.message}`, "error");
                 return false;
             }
@@ -956,26 +978,52 @@ ${timeline}
             if(d.candidates && d.candidates[0].content) {
                 const txt = d.candidates[0].content.parts[0].text;
 
+                log("Raw AI Response Received", 'DEBUG');
+                log({ raw_text: txt }, 'DEBUG'); // Log full text object to console
+
+                // Attempt to clean Markdown if present
+                const cleanTxt = txt.replace(/```json/g, '').replace(/```/g, '').trim();
+
                 // Regex to find the FIRST opening bracket '{' and LAST closing bracket '}'
-                // This ignores any text before or after the JSON object
-                const jsonMatch = txt.match(/\{[\s\S]*\}/);
+                const jsonMatch = cleanTxt.match(/\{[\s\S]*\}/);
 
                 if (jsonMatch) {
                     try {
                         this.comments = JSON.parse(jsonMatch[0]);
+                        log("JSON Parsed Successfully", 'INFO');
                         GUI.update();
                         GUI.showToast("Coach Analysis Complete!", "success");
                         return true;
                     } catch (e) {
-                        console.error("JSON Parse Failed. Raw text:", txt);
-                        GUI.showToast("AI data format error", "error");
+                        log("JSON Parse Failed", 'ERROR');
+                        log(e, 'ERROR');
+
+                        // Fallback: Try to fix common JSON errors or just show text
+                        this.fallbackToText(txt, analysisData.length);
                     }
                 } else {
-                    console.error("No JSON object found in response:", txt);
-                    GUI.showToast("AI returned text instead of data", "error");
+                    log("No JSON structure found. Using fallback.", 'WARN');
+                    this.fallbackToText(txt, analysisData.length);
                 }
             }
-        } catch(e) { console.error("Fetch/Network Error:", e); }
+        } catch(e) {
+            log("Fetch/Network Error", 'ERROR');
+            log(e, 'ERROR');
+        }
+    },
+
+    fallbackToText: function(text, moveCount) {
+        log("Activating Text Fallback Mode", 'WARN');
+        this.comments = {};
+        // Apply the raw text to every move so the user sees it regardless of where they click
+        for(let i=1; i<=moveCount; i++) {
+            this.comments[i] = {
+                analysis: `(Raw AI Output) ${text.substring(0, 300)}... <br><br><em>Full text in logs.</em>`
+            };
+        }
+        GUI.update();
+        GUI.showToast("Analysis Loaded (Raw Text)", "warning");
+        return true;
     }
 };
 window.Gemini = Gemini;
