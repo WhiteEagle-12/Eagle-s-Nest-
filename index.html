@@ -1226,12 +1226,19 @@ const Scanner = {
 
                 const fenBefore = tempChess.fen();
                 const moveObj = moves[i];
+                const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
 
                 // 1. OPENING ID
+                let isBook = false;
                 if (i < 15) {
                     const bookResult = await this.fetchBookData(fenBefore);
-                    if (bookResult && i >= 2 && identifiedOpening === "Unknown Opening") {
-                         if (bookResult.opening) identifiedOpening = `${bookResult.opening.eco} ${bookResult.opening.name}`;
+                    if (bookResult) {
+                        const bookMoves = bookResult.moves.map(m => m.uci);
+                        if (bookMoves.includes(userUci)) isBook = true;
+
+                        if (i >= 2 && identifiedOpening === "Unknown Opening") {
+                             if (bookResult.opening) identifiedOpening = `${bookResult.opening.eco} ${bookResult.opening.name}`;
+                        }
                     }
                 }
 
@@ -1270,7 +1277,8 @@ const Scanner = {
                 const evalLoss = this.calcLoss(preResult.eval, postResult.eval, moveObj.color);
                 
                 let cls = "Neutral";
-                if (evalLoss >= 2.0) cls = "Blunder";
+                if (isBook) cls = "Book";
+                else if (evalLoss >= 2.0) cls = "Blunder";
                 else if (evalLoss >= 1.0) cls = "Mistake";
                 else if (evalLoss >= 0.5) cls = "Inaccuracy";
                 else if (evalLoss >= 0.2) cls = "Good";
