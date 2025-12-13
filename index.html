@@ -772,7 +772,7 @@ const Engine = {
 };
 window.Engine = Engine;
 
-/**
+        /**
  * TACTICAL & STRATEGIC ENGINE - V5 (Platinum)
  */
 const HeatMap = {
@@ -819,7 +819,6 @@ const HeatMap = {
         }
 
         // 2. Calculate Center Presence
-        // We check who physically occupies the center
         centerSquares.forEach(coord => {
             const p = board[coord[0]][coord[1]];
             if (p) {
@@ -887,10 +886,6 @@ const HeatMap = {
 };
 window.HeatMap = HeatMap;
             
-
-/**
- * GEMINI AI
- */
 const Gemini = {
     comments: {}, 
     getCommentary: async function(analysisData, openingName, focus) {
@@ -915,8 +910,7 @@ const Gemini = {
             let evalText = d.eval;
             if(d.eval.toString().startsWith('M')) evalText = `Mate in ${d.eval.replace('M','')}`;
 
-            // We explicitly calculate the "Pain" (Eval Drop)
-            // If the move was a Blunder, we highlight exactly how much was lost.
+            // Eval Drop Metric (The "Pain" factor)
             let painMetric = "";
             if (d.evalDiff && Math.abs(parseFloat(d.evalDiff)) > 0.5) {
                 painMetric = `| EVAL DROP: ${d.evalDiff}`;
@@ -959,7 +953,9 @@ ${timeline}
 
         try {
             log("Sending Platinum Analysis...");
-            const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+            
+            // RESTORED TO 2.5-FLASH
+            const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
             
             const res = await fetch(endpoint+`?key=${k}`, {
                 method:'POST',
@@ -997,6 +993,9 @@ ${timeline}
         }
     }
 };
+window.Gemini = Gemini;
+
+    
 window.Gemini = Gemini;
 /**
  * GAME LOGIC
