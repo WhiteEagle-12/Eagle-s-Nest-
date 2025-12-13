@@ -1265,7 +1265,7 @@ const Game = {
 window.Game = Game;
 
 /**
- * SCANNER - The Truth Pipeline (Updated for Diamond Features)
+ * SCANNER - Fixed Book Logic + Opening ID
  */
 const Scanner = {
     start: async function() {
@@ -1295,21 +1295,37 @@ const Scanner = {
             const moves = Game.history;
             const tempChess = new Chess();
             
-            // NEW: Opening Name Storage
+            // Storage for the Opening Name
             let identifiedOpening = "Unknown Opening";
 
             for(let i=0; i<moves.length; i++) {
                 await new Promise(r => setTimeout(r, 20));
 
                 const fenBefore = tempChess.fen();
-                
-                // NEW: Identify Opening on moves 5-10 for best accuracy
-                if (i >= 4 && i <= 12 && identifiedOpening === "Unknown Opening") {
-                    const bookData = await this.fetchBookData(fenBefore);
-                    if (bookData && bookData.opening) {
-                        identifiedOpening = `${bookData.opening.eco} ${bookData.opening.name}`;
+                const moveObj = moves[i];
+                const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
+
+                // --- 1. RESTORED BOOK LOGIC ---
+                let isBook = false;
+
+                // We check book for the first 15 moves
+                if (i < 15) {
+                    const bookResult = await this.fetchBookData(fenBefore);
+                    if (bookResult) {
+                        // A: Check if THIS move is a book move
+                        const bookMoves = bookResult.moves.map(m => m.uci);
+                        if (bookMoves.includes(userUci)) isBook = true;
+
+                        // B: Capture the Opening Name (if we haven't yet)
+                        // We prefer to grab the name around move 3-10 for better specificity
+                        if (i >= 2 && !identifiedOpening.includes("Defense") && !identifiedOpening.includes("Game")) {
+                             if (bookResult.opening) {
+                                 identifiedOpening = `${bookResult.opening.eco} ${bookResult.opening.name}`;
+                             }
+                        }
                     }
                 }
+                // -----------------------------
 
                 const tacticalSnapshot = HeatMap.analyze(tempChess);
                 const preMoveResult = await Engine.runScan(fenBefore);
@@ -1325,9 +1341,6 @@ const Scanner = {
                     if(preMoveResult.pv) bestLineSan = this.uciToSan(fenBefore, preMoveResult.pv);
                 }
 
-                const moveObj = moves[i];
-                const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
-                
                 tempChess.move(moveObj.san);
                 const fenAfter = tempChess.fen();
                 
@@ -1346,19 +1359,28 @@ const Scanner = {
 
                 let evalLoss = (moveObj.color === 'w') ? scoreBefore - scoreAfter : scoreAfter - scoreBefore;
                 if (moveObj.color === 'b') evalLoss = -evalLoss;
+
+                // --- CLASSIFICATION ---
                 let cls = "Neutral";
                 let loss = 0;
                 if (moveObj.color === 'w') loss = scoreBefore - scoreAfter;
                 else loss = scoreAfter - scoreBefore;
                 
-                if (isMate) cls = "Best";
+                if (isBook) cls = "Book"; // <--- THIS LINE WAS MISSING IN THE PREVIOUS VERSION
+                else if (isMate) cls = "Best";
                 else if (userUci === preMoveResult.bestMove) cls = "Best";
-                else if (loss >= 2.0) cls = "Blunder";
-                else if (loss >= 1.0) cls = "Mistake";
-                else if (loss >= 0.5) cls = "Inaccuracy";
-                else if (loss >= 0.2) cls = "Good";
-                else if (loss >= 0.05) cls = "Excellent";
-                else cls = "Best";
+                else {
+                    const wasWinning = (moveObj.color === 'w' ? scoreBefore > 2 : scoreBefore < -2);
+                    const isWinning = (moveObj.color === 'w' ? scoreAfter > 1 : scoreAfter < -1);
+
+                    if (wasWinning && !isWinning) cls = "Missed";
+                    else if (loss >= 2.0) cls = "Blunder";
+                    else if (loss >= 1.0) cls = "Mistake";
+                    else if (loss >= 0.5) cls = "Inaccuracy";
+                    else if (loss >= 0.2) cls = "Good";
+                    else if (loss >= 0.05) cls = "Excellent";
+                    else cls = "Best";
+                }
                 
                 // Puzzle Logic
                 if ((cls === 'Blunder' || cls === 'Mistake' || cls === 'Missed') && moveObj.color === Game.userColor) {
@@ -1385,7 +1407,6 @@ const Scanner = {
 
                 Game.analysisData.push(data);
                 
-                // Update UI badge
                 if (Game.generatedPuzzles.length > 0) {
                     document.getElementById('puzzleBadge').innerText = Game.generatedPuzzles.length;
                     document.getElementById('puzzleBadge').classList.remove('d-none');
