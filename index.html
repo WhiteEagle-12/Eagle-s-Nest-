@@ -942,14 +942,40 @@ ${timeline}
                 headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
+
             const d = await res.json();
-            if(d.candidates) {
-                const txt = d.candidates[0].content.parts[0].text;
-                this.comments = JSON.parse(txt.replace(/```json|```/g, ''));
-                GUI.update();
-                return true;
+
+            // 1. Check for API Errors (Quota, Invalid Key, etc.)
+            if(d.error) {
+                console.error("Gemini API Error:", d.error);
+                GUI.showToast(`AI Error: ${d.error.message}`, "error");
+                return false;
             }
-        } catch(e) { console.error(e); }
+
+            // 2. Extract and Parse JSON cleanly
+            if(d.candidates && d.candidates[0].content) {
+                const txt = d.candidates[0].content.parts[0].text;
+
+                // Regex to find the FIRST opening bracket '{' and LAST closing bracket '}'
+                // This ignores any text before or after the JSON object
+                const jsonMatch = txt.match(/\{[\s\S]*\}/);
+
+                if (jsonMatch) {
+                    try {
+                        this.comments = JSON.parse(jsonMatch[0]);
+                        GUI.update();
+                        GUI.showToast("Coach Analysis Complete!", "success");
+                        return true;
+                    } catch (e) {
+                        console.error("JSON Parse Failed. Raw text:", txt);
+                        GUI.showToast("AI data format error", "error");
+                    }
+                } else {
+                    console.error("No JSON object found in response:", txt);
+                    GUI.showToast("AI returned text instead of data", "error");
+                }
+            }
+        } catch(e) { console.error("Fetch/Network Error:", e); }
     }
 };
 window.Gemini = Gemini;
