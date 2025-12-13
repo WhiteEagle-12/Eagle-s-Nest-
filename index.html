@@ -774,6 +774,7 @@ window.Engine = Engine;
 
 /**
  * TACTICAL HEAT MAP ENGINE - V3 (Comprehensive Board Awareness)
+ * Optimized for Token Efficiency
  */
 const HeatMap = {
     val: { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }, // Normalized: King = 0 for trades
@@ -781,7 +782,6 @@ const HeatMap = {
     // Core Entry Point
     analyze: function(chess) {
         const fen = chess.fen();
-        const turn = chess.turn();
         
         let report = {
             exchange: {},
@@ -795,11 +795,12 @@ const HeatMap = {
         // 1. Static Exchange Evaluation (SEE) for every square
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
+                // We only need to check squares relevant to the position
                 const piece = board[r][c];
                 const sq = files[c] + (8-r);
                 
-                // Analyze trades on occupied squares and empty contested squares
                 const exchange = this.getExchangeAnalysis(chess, sq);
+                // Only store if there is actual activity (attackers present)
                 if (exchange.attackers.length > 0) {
                     report.exchange[sq] = exchange;
                 }
@@ -824,13 +825,18 @@ const HeatMap = {
         const defVal = defenders.reduce((acc, p) => acc + (this.val[p.toLowerCase()] || 0), 0);
         const net = defVal - atkVal;
 
+        // Determine status
+        let status = "Safe";
+        if (attackers.length > defenders.length) status = "Lost";
+        else if (attackers.length > 0) status = "Contested";
+
         return {
             attackers: attackers,
             defenders: defenders,
             atkValue: atkVal,
             defValue: defVal,
             net: net,
-            status: attackers.length > defenders.length ? "Lost" : (attackers.length > 0 ? "Contested" : "Safe")
+            status: status
         };
     },
 
@@ -855,17 +861,21 @@ const HeatMap = {
         return [];
     },
     
+    // OPTIMIZED FORMATTER: Reduces token usage by ~90% to prevent API limits
     formatForAI: function(report) {
-        let txt = "Tactical Radar:\n";
+        let txt = ""; 
         for (const [sq, data] of Object.entries(report.exchange)) {
-            if (data.attackers.length > 0) {
-                txt += `  - ${sq}: Attacked by [${data.attackers.join(', ')}] (Val: ${data.atkValue}), Defended by [${data.defenders.join(', ')}] (Val: ${data.defValue}). Net Defense: ${data.net}. Status: ${data.status}\n`;
+            // CRITICAL CHANGE: Only report squares that are actually dangerous or complex.
+            // We ignore "Safe" squares where defenders >= attackers to save massive amounts of tokens.
+            if (data.status === 'Lost' || (data.status === 'Contested' && data.atkValue > 1)) {
+                txt += `[${sq}: ${data.status} (Net ${data.net}, AtkVal ${data.atkValue})] `;
             }
         }
-        return txt;
+        return txt ? "Radar: " + txt : "";
     }
 };
 window.HeatMap = HeatMap;
+            
 
 /**
  * GEMINI AI
