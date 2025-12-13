@@ -772,8 +772,8 @@ const Engine = {
 };
 window.Engine = Engine;
 
-/**
- * TACTICAL & STRUCTURAL ENGINE (Diamond)
+        /**
+ * TACTICAL & STRATEGIC ENGINE - V5 (Platinum)
  */
 const HeatMap = {
     val: { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }, 
@@ -782,7 +782,6 @@ const HeatMap = {
         let report = {
             exchange: {},
             strategy: this.getStrategicSnapshot(chess),
-            pawns: this.getPawnStructure(chess), // NEW: Pawn Analysis
             pins: []
         };
 
@@ -800,34 +799,15 @@ const HeatMap = {
         return report;
     },
 
-    // NEW: Pawn Structure Scanner
-    getPawnStructure: function(chess) {
-        const board = chess.board();
-        let structure = { w: { iso:0, dbl:0, pass:0 }, b: { iso:0, dbl:0, pass:0 } };
-        
-        for(let c=0; c<8; c++) {
-            let wPawns = 0, bPawns = 0;
-            for(let r=0; r<8; r++) {
-                const p = board[r][c];
-                if(p && p.type === 'p') {
-                    if(p.color === 'w') wPawns++; else bPawns++;
-                }
-            }
-            if(wPawns > 1) structure.w.dbl++;
-            if(bPawns > 1) structure.b.dbl++;
-            
-            // Check Isolated (simplified: just checking file neighbors)
-            // (Full isolated/passed logic omitted for brevity but this is the hook)
-        }
-        return structure;
-    },
-
     getStrategicSnapshot: function(chess) {
         const board = chess.board();
         let matW = 0, matB = 0;
         let centerW = 0, centerB = 0; 
+        
+        // Center Squares (d4, d5, e4, e5) -> Indices: (3,3), (3,4), (4,3), (4,4)
         const centerSquares = [[3,3], [3,4], [4,3], [4,4]];
 
+        // 1. Calculate Material
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
                 const p = board[r][c];
@@ -838,20 +818,18 @@ const HeatMap = {
             }
         }
 
+        // 2. Calculate Center Presence
         centerSquares.forEach(coord => {
             const p = board[coord[0]][coord[1]];
-            if (p) { if (p.color === 'w') centerW++; else centerB++; }
+            if (p) {
+                if (p.color === 'w') centerW++; else centerB++;
+            }
         });
-
-        const totalMat = matW + matB;
-        let phase = "Middlegame";
-        if (totalMat < 20) phase = "Endgame";
-        if (totalMat > 60) phase = "Opening";
 
         return {
             material: matW - matB, 
-            center: centerW - centerB,
-            phase: phase
+            center: centerW - centerB, // Positive = White controls center
+            phase: (matW + matB) < 20 ? "Endgame" : "Middlegame" 
         };
     },
 
@@ -887,12 +865,14 @@ const HeatMap = {
     
     formatForAI: function(report) {
         let txt = ""; 
-        const strat = report.strategy;
-        txt += `[Phase: ${strat.phase}] [Center: ${strat.center > 0 ? 'W+' : 'B+'}${Math.abs(strat.center)}] `;
         
-        if (report.pawns.w.dbl > 0) txt += `[W_DbP: ${report.pawns.w.dbl}] `;
-        if (report.pawns.b.dbl > 0) txt += `[B_DbP: ${report.pawns.b.dbl}] `;
+        // 1. High-Level Strategy Tags
+        const mat = report.strategy.material > 0 ? `+${report.strategy.material}` : report.strategy.material;
+        const cen = report.strategy.center > 0 ? `White+${report.strategy.center}` : (report.strategy.center < 0 ? `Black+${Math.abs(report.strategy.center)}` : "Equal");
+        
+        txt += `[Phase: ${report.strategy.phase}] [Mat: ${mat}] [Center: ${cen}] `;
 
+        // 2. Critical Threats (Filtered)
         let threats = "";
         for (const [sq, data] of Object.entries(report.exchange)) {
             if (data.status === 'Lost' || (data.status === 'Contested' && data.atkValue > 1)) {
@@ -900,92 +880,81 @@ const HeatMap = {
             }
         }
         if(threats) txt += `| THREATS: ${threats}`;
+        
         return txt;
     }
 };
 window.HeatMap = HeatMap;
-
-/**
- * THE "HUMAN COACH" ENGINE (Final Polish)
- * Combines "Diamond" Data with "Human" Personality.
- */
+            
 const Gemini = {
     comments: {}, 
     getCommentary: async function(analysisData, openingName, focus) {
         const k = getEffectiveKey();
         if (!k) { GUI.showToast("Please set API Key in Settings!", "error"); return false; }
 
+        // 1. THE DESTINY (Final Result)
         const finalFrame = analysisData[analysisData.length - 1];
         const resultHeader = `
-**GAME CONTEXT**
-- Opening Identity: ${openingName}
-- Final Result: ${finalFrame ? (finalFrame.isMate ? "Checkmate" : "Resignation/Draw") : 'Unknown'}
+**GAME METADATA**
+- Opening: ${openingName}
+- Total Moves: ${analysisData.length}
+- Result: ${finalFrame ? (finalFrame.isMate ? "Checkmate" : "Resignation/Draw") : 'Unknown'}
 `;
 
         let timeline = "";
         
+        // 2. THE TIMELINE (Rich Context)
         analysisData.forEach((d, i) => {
-            // STRATEGIC TRANSLATION LAYER
-            // We take the raw "Diamond" data and turn it into "Coach Notes"
-            let tags = [];
-            
-            // 1. Momentum & Tactics
-            if (d.classification === 'Brilliant') tags.push("BRILLIANT MOVE!");
-            if (d.classification === 'Blunder') tags.push("Critical Mistake");
-            if (d.evalDiff && Math.abs(parseFloat(d.evalDiff)) > 1.0) tags.push("Major Swing in Momentum");
-            
-            // 2. Strategic Control (from HeatMap)
-            if (d.tactics && d.tactics.strategy) {
-                const s = d.tactics.strategy;
-                if (s.center > 1) tags.push("You control the Center");
-                if (s.center < -1) tags.push("Opponent owns the Center");
-                if (Math.abs(s.material) > 2) tags.push("Significant Material Imbalance");
-            }
+            if (focus !== 'both' && focus !== d.color) return;
 
-            // 3. Pawn Structure (from HeatMap Diamond)
-            if (d.tactics && d.tactics.pawns) {
-                const p = d.tactics.pawns;
-                const myPawns = d.color === 'w' ? p.w : p.b;
-                if (myPawns.dbl > 0) tags.push("Created Doubled Pawns (Weakness)");
-                if (myPawns.iso > 0) tags.push("Created Isolated Pawn (Weakness)");
+            let evalText = d.eval;
+            if(d.eval.toString().startsWith('M')) evalText = `Mate in ${d.eval.replace('M','')}`;
+
+            // Eval Drop Metric (The "Pain" factor)
+            let painMetric = "";
+            if (d.evalDiff && Math.abs(parseFloat(d.evalDiff)) > 0.5) {
+                painMetric = `| EVAL DROP: ${d.evalDiff}`;
             }
 
             timeline += `
-[MOVE ${i+1}] ${d.color==='w'?'White':'Black'} played ${d.san} (${d.classification})
-   - Context Tags: ${tags.join(', ')}
-   - Best Move was: ${d.bestMoveSan || "Same"}
+[PLY ${i+1}] ${d.color==='w'?'White':'Black'} played **${d.san}**
+   - Class: ${d.classification} ${painMetric}
+   - Context: ${HeatMap.formatForAI(d.tactics)}
+   - Best Line (The Future): ${d.pvSan || "None"}
 `;
         });
 
         if (timeline.length < 50) timeline = "Game was short.";
 
         const prompt = `
-You are a friendly, enthusiastic Chess Coach.
-I am showing you a game. Give a **short, human comment for EVERY move** played by ${focus === 'both' ? 'both players' : (focus === 'w' ? 'White' : 'Black')}.
+You are a World-Class Grandmaster Coach. 
+I have provided the **Full Game Timeline** below.
 
-**DATA SOURCE:**
-- I have translated the complex board data into "Context Tags" (e.g., "Created Doubled Pawns").
-- Use these tags to form your advice, but speak naturally.
-- **Opening:** You know the opening is the ${openingName}. If a move fits/breaks this opening's style, mention it!
+**CONTEXT:**
+${resultHeader}
 
-**YOUR STYLE:**
-- **Short & Punchy:** "Nice control of the center!" or "Careful, that creates a doubled pawn."
-- **Encouraging:** "Solid development." "Good logic."
-- **Helpful:** If they Blunder, look at the "Best Move" I provided and explain *why* it was better.
+**YOUR MISSION:**
+Analyze the timeline. Focus on the *Turning Points* where the "Eval Drop" is high.
+1. **Compare Real vs. Ideal:** You know the "Best Line" (The Future). If the player missed it, explain *why* the engine's plan was superior.
+2. **Use the Stats:** Reference [Center], [Mat], and [Eval Drop]. Example: "You lost control of the [Center] here, causing a [Eval Drop] of -2.0."
+3. **Be Concise but Deep:** Do not fluff. Give concrete chess principles.
 
 **JSON RETURN FORMAT:**
-Keys are the Move ID (e.g., "1", "2").
 {
-    "1": { "analysis": "Strong start! Taking space in the center immediately." },
-    "11": { "analysis": "Ouch! This move allows a fork. You should have retreated the Queen to d1." }
+    "12": {
+        "analysis": "A critical error. You played f3, weakening your King. The Strategic Context shows you were already behind in [Center] control, and this move ignores the urgent threat on d4. You should have played Nf3.",
+        "pv_explanation": ["Nf3 defends d4", "Be2 develops"] 
+    }
 }
 
-**GAME TIMELINE:**
+**TIMELINE:**
 ${timeline}
         `;
 
         try {
-            log("Sending Coach Request...");
+            log("Sending Platinum Analysis...");
+            
+            // RESTORED TO 2.5-FLASH
             const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
             
             const res = await fetch(endpoint+`?key=${k}`, {
@@ -1013,20 +982,21 @@ ${timeline}
             if (start !== -1 && end !== -1) {
                 cleanText = cleanText.substring(start, end + 1);
                 this.comments = JSON.parse(cleanText);
-                log("Coach Feedback Received.");
-                GUI.update(); 
+                log("Coach Analysis Complete.");
                 return true;
             }
             return false;
         } catch (e) { 
             console.error(e);
-            GUI.showToast("Coach Failed. Check connection.", 'ERROR');
+            GUI.showToast("Analysis Failed. See Log.", 'ERROR');
             return false; 
         }
     }
 };
 window.Gemini = Gemini;
 
+    
+window.Gemini = Gemini;
 /**
  * GAME LOGIC
  */
@@ -1299,19 +1269,19 @@ const Scanner = {
             const moves = Game.history;
             const tempChess = new Chess();
             
-            // NEW: Opening Name Storage
-            let identifiedOpening = "Unknown Opening";
-            
             for(let i=0; i<moves.length; i++) {
                 await new Promise(r => setTimeout(r, 20));
 
                 const fenBefore = tempChess.fen();
                 
-                // NEW: Identify Opening on moves 5-10 for best accuracy
-                if (i >= 4 && i <= 12 && identifiedOpening === "Unknown Opening") {
-                    const bookData = await this.fetchBookData(fenBefore);
-                    if (bookData && bookData.opening) {
-                        identifiedOpening = `${bookData.opening.eco} ${bookData.opening.name}`;
+                let isBook = false;
+                if (i < 15) {
+                    const bookResult = await this.fetchBookData(fenBefore);
+                    if (bookResult) {
+                        const bookMoves = bookResult.moves.map(m => m.uci);
+                        const moveObj = moves[i];
+                        const userUci = moveObj.from + moveObj.to + (moveObj.promotion || '');
+                        if (bookMoves.includes(userUci)) isBook = true;
                     }
                 }
 
@@ -1418,10 +1388,10 @@ const Scanner = {
             }
 
             text.innerText = "Consulting Grandmaster Coach...";
-            document.getElementById('coachDisplay').innerHTML = '<div class="text-center p-3 text-muted"><i class="fa-solid fa-brain fa-spin me-2"></i> Synthesizing Data...</div>';
+            document.getElementById('coachDisplay').innerHTML = '<div class="text-center p-3 text-muted"><i class="fa-solid fa-brain fa-spin me-2"></i> Analyzing threats & variations...</div>';
             bar.className = "progress-bar bg-success progress-bar-striped progress-bar-animated";
             
-            await Gemini.getCommentary(Game.analysisData, identifiedOpening, focus);
+            await Gemini.getCommentary(Game.analysisData, "Custom Game", focus);
             
             bar.style.width = "100%";
             GUI.renderAnalysisList();
