@@ -903,8 +903,9 @@ const HeatMap = {
 window.HeatMap = HeatMap;
             
 /**
- * THE "NATURAL COACH" ENGINE
- * (Fixed: Removes robotic quoting and awkward phrasing)
+ * THE "GRANDMASTER ANALYST" ENGINE (Merged V6)
+ * - Persona: Assertive, Tactical, Explains "Why".
+ * - Data: Uses "Diamond" Scanner (Pawns/Strategy) AND Tactical events (Checks/Captures).
  */
 const Gemini = {
     comments: {}, 
@@ -915,75 +916,78 @@ const Gemini = {
         const finalFrame = analysisData[analysisData.length - 1];
         const resultHeader = `
 **GAME CONTEXT**
-- Opening Identity: ${openingName}
-- Final Result: ${finalFrame ? (finalFrame.isMate ? "Checkmate" : "Resignation/Draw") : 'Unknown'}
+- Opening: ${openingName}
+- Result: ${finalFrame ? (finalFrame.isMate ? "Checkmate" : "Resignation/Draw") : 'Unknown'}
 `;
 
         let timeline = "";
         
         analysisData.forEach((d, i) => {
+            // MERGED TAG SYSTEM: Strategy + Tactics
             let tags = [];
 
-            // 1. Momentum & Tactics (Data collection)
-            if (d.classification === 'Brilliant') tags.push("Brilliant move");
-            if (d.classification === 'Blunder') tags.push("Blunder (Costly mistake)");
-            if (d.evalDiff && Math.abs(parseFloat(d.evalDiff)) > 1.5) tags.push("Big Momentum Shift");
+            // 1. Critical Events
+            if (d.classification === 'Brilliant') tags.push("BRILLIANT MOVE");
+            if (d.classification === 'Blunder') tags.push("BLUNDER");
+            if (d.evalDiff && Math.abs(parseFloat(d.evalDiff)) > 1.5) tags.push("Momentum Swing");
 
-            // 2. Strategic Control
+            // 2. Tactical Flags (New)
+            if (d.san.includes('+')) tags.push("CHECK");
+            if (d.san.includes('#')) tags.push("CHECKMATE");
+            if (d.san.includes('x')) tags.push("CAPTURE");
+
+            // 3. Strategic Context (Restored from Diamond)
             if (d.tactics && d.tactics.strategy) {
                 const s = d.tactics.strategy;
-                if (s.center > 1) tags.push("Strong Center Control");
-                if (s.center < -1) tags.push("Lost Center Control");
+                if (s.center > 1) tags.push("White Controls Center");
+                if (s.center < -1) tags.push("Black Controls Center");
                 if (Math.abs(s.material) > 2) tags.push("Material Imbalance");
             }
 
-            // 3. Pawn Structure
+            // 4. Pawn Structure (Restored from Diamond)
             if (d.tactics && d.tactics.pawns) {
                 const p = d.tactics.pawns;
                 const myPawns = d.color === 'w' ? p.w : p.b;
-                if (myPawns.dbl > 0) tags.push("Weakness: Doubled Pawns");
-                if (myPawns.iso > 0) tags.push("Weakness: Isolated Pawn");
+                if (myPawns.dbl > 0) tags.push("Has Doubled Pawns");
+                if (myPawns.iso > 0) tags.push("Has Isolated Pawn");
             }
 
             timeline += `
-[MOVE ${i+1}] ${d.color==='w'?'White':'Black'} played ${d.san} (${d.classification})
-   - Internal Notes: ${tags.join(', ')}
-   - Better Alternative: ${d.bestMoveSan || "None"}
+[MOVE ${i+1}] ${d.color==='w'?'White':'Black'} played **${d.san}**
+   - Quality: ${d.classification}
+   - Board Tags: ${tags.join(', ')}
+   - ENGINE PREFERRED: ${d.bestMoveSan || "None"} (Plan: ${d.pvSan || "Unknown"})
 `;
         });
 
         if (timeline.length < 50) timeline = "Game was short.";
 
         const prompt = `
-You are a friendly, experienced Chess Coach reviewing a game with your student.
-I have provided a timeline of moves with some "Internal Notes" about the position.
+You are a serious, tactically sharp Grandmaster Chess Coach.
+Review the game timeline below. For **EVERY** move, provide a concise analysis.
 
-**CRITICAL STYLE RULES (DO NOT BREAK):**
-1. **Speak Naturally:** Do NOT use single quotes around words (e.g., never write 'major swing in momentum'). Never sound like you are reading a database.
-2. **Synthesize, Don't Repeat:** If the note says "Weakness: Doubled Pawns", don't say "You have created 'Doubled Pawns'." Instead, say "Be careful, that move messes up your pawn structure."
-3. **Don't Over-Hype:** If a move is standard Book, just say "Solid development" or "Standard stuff." Don't exclaim "Strong start!" every time.
-4. **Focus on the "Why":** If they made a mistake, look at the "Better Alternative" I provided and explain *why* that move would have been better in plain English.
-
-**TONE EXAMPLE:**
-* *Bad:* "This is a 'critical mistake' creating a 'material imbalance'."
-* *Good:* "Ouch, that was a rough one. You gave up a piece for free! You should have just retreated the Knight."
+**YOUR PRIORITY: IDENTIFY THE TACTIC & CONSEQUENCE**
+1. **Describe the Move:** Don't just say "Good move." Say *what it accomplishes*.
+   - *Use the Board Tags:* If the tag says "Has Doubled Pawns," mention it ("This move creates weak doubled pawns").
+   - *Identify Tactics:* Use terms like Fork, Pin, Skewer, Discovered Attack, Removing the Defender.
+2. **Compare with Engine:** If the player made a mistake, explain specifically what the **Engine Preferred** move would have achieved that the player's move did not.
+   - *Example:* "You captured the pawn, but d5 was better because it opens the Bishop's diagonal for a mating attack."
+3. **Be Direct:** Use chess terminology. Do not use fluff. Do not use quotes around chess terms.
 
 **JSON RETURN FORMAT:**
-Return a JSON object where keys are the Move ID (e.g., "1", "2").
 {
-    "1": { "analysis": "Good start, grabbing the center immediately." },
-    "3": { "analysis": "A bit risky! bringing the Queen out this early usually just gives your opponent free time to develop while they chase it around." }
+    "12": { "analysis": "A strong tactical blow! Nxc2+ forks the King and Rook, winning the exchange. However, d5 was actually mate in 4, tearing open the center lines against the uncastled King." }
 }
 
-**GAME TIMELINE:**
+**TIMELINE:**
 ${timeline}
         `;
 
         try {
-            log("Sending Coach Request...");
-            const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+            log("Sending Grandmaster Analysis...");
             
-            const res = await fetch(endpoint+`?key=${k}`, {
+            // Use Global Constant
+            const res = await fetch(MODEL_ENDPOINT+`?key=${k}`, {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -1020,9 +1024,6 @@ ${timeline}
         }
     }
 };
-window.Gemini = Gemini;
-
-    
 window.Gemini = Gemini;
 /**
  * GAME LOGIC
