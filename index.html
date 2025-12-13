@@ -903,7 +903,8 @@ const HeatMap = {
 window.HeatMap = HeatMap;
             
 /**
- * THE "HUMAN COACH" ENGINE (Final Polish)
+ * THE "NATURAL COACH" ENGINE
+ * (Fixed: Removes robotic quoting and awkward phrasing)
  */
 const Gemini = {
     comments: {}, 
@@ -921,57 +922,57 @@ const Gemini = {
         let timeline = "";
         
         analysisData.forEach((d, i) => {
-            // STRATEGIC TRANSLATION LAYER
             let tags = [];
 
-            // 1. Momentum & Tactics
-            if (d.classification === 'Brilliant') tags.push("BRILLIANT MOVE!");
-            if (d.classification === 'Blunder') tags.push("Critical Mistake");
-            if (d.evalDiff && Math.abs(parseFloat(d.evalDiff)) > 1.0) tags.push("Major Swing in Momentum");
+            // 1. Momentum & Tactics (Data collection)
+            if (d.classification === 'Brilliant') tags.push("Brilliant move");
+            if (d.classification === 'Blunder') tags.push("Blunder (Costly mistake)");
+            if (d.evalDiff && Math.abs(parseFloat(d.evalDiff)) > 1.5) tags.push("Big Momentum Shift");
 
             // 2. Strategic Control
             if (d.tactics && d.tactics.strategy) {
                 const s = d.tactics.strategy;
-                if (s.center > 1) tags.push("You control the Center");
-                if (s.center < -1) tags.push("Opponent owns the Center");
-                if (Math.abs(s.material) > 2) tags.push("Significant Material Imbalance");
+                if (s.center > 1) tags.push("Strong Center Control");
+                if (s.center < -1) tags.push("Lost Center Control");
+                if (Math.abs(s.material) > 2) tags.push("Material Imbalance");
             }
 
             // 3. Pawn Structure
             if (d.tactics && d.tactics.pawns) {
                 const p = d.tactics.pawns;
                 const myPawns = d.color === 'w' ? p.w : p.b;
-                if (myPawns.dbl > 0) tags.push("Created Doubled Pawns (Weakness)");
+                if (myPawns.dbl > 0) tags.push("Weakness: Doubled Pawns");
+                if (myPawns.iso > 0) tags.push("Weakness: Isolated Pawn");
             }
 
             timeline += `
 [MOVE ${i+1}] ${d.color==='w'?'White':'Black'} played ${d.san} (${d.classification})
-   - Context Tags: ${tags.join(', ')}
-   - Best Move was: ${d.bestMoveSan || "Same"}
+   - Internal Notes: ${tags.join(', ')}
+   - Better Alternative: ${d.bestMoveSan || "None"}
 `;
         });
 
         if (timeline.length < 50) timeline = "Game was short.";
 
         const prompt = `
-You are a friendly, enthusiastic Chess Coach.
-I am showing you a game. Give a **short, human comment for EVERY move** played by ${focus === 'both' ? 'both players' : (focus === 'w' ? 'White' : 'Black')}.
+You are a friendly, experienced Chess Coach reviewing a game with your student.
+I have provided a timeline of moves with some "Internal Notes" about the position.
 
-**DATA SOURCE:**
-- I have translated the complex board data into "Context Tags" (e.g., "Created Doubled Pawns").
-- Use these tags to form your advice, but speak naturally.
-- **Opening:** You know the opening is the ${openingName}. If a move fits/breaks this opening's style, mention it!
+**CRITICAL STYLE RULES (DO NOT BREAK):**
+1. **Speak Naturally:** Do NOT use single quotes around words (e.g., never write 'major swing in momentum'). Never sound like you are reading a database.
+2. **Synthesize, Don't Repeat:** If the note says "Weakness: Doubled Pawns", don't say "You have created 'Doubled Pawns'." Instead, say "Be careful, that move messes up your pawn structure."
+3. **Don't Over-Hype:** If a move is standard Book, just say "Solid development" or "Standard stuff." Don't exclaim "Strong start!" every time.
+4. **Focus on the "Why":** If they made a mistake, look at the "Better Alternative" I provided and explain *why* that move would have been better in plain English.
 
-**YOUR STYLE:**
-- **Short & Punchy:** "Nice control of the center!" or "Careful, that creates a doubled pawn."
-- **Encouraging:** "Solid development." "Good logic."
-- **Helpful:** If they Blunder, look at the "Best Move" I provided and explain *why* it was better.
+**TONE EXAMPLE:**
+* *Bad:* "This is a 'critical mistake' creating a 'material imbalance'."
+* *Good:* "Ouch, that was a rough one. You gave up a piece for free! You should have just retreated the Knight."
 
 **JSON RETURN FORMAT:**
-Keys are the Move ID (e.g., "1", "2").
+Return a JSON object where keys are the Move ID (e.g., "1", "2").
 {
-    "1": { "analysis": "Strong start! Taking space in the center immediately." },
-    "11": { "analysis": "Ouch! This move allows a fork. You should have retreated the Queen to d1." }
+    "1": { "analysis": "Good start, grabbing the center immediately." },
+    "3": { "analysis": "A bit risky! bringing the Queen out this early usually just gives your opponent free time to develop while they chase it around." }
 }
 
 **GAME TIMELINE:**
