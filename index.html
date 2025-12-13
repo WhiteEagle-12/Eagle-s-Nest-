@@ -773,44 +773,65 @@ const Engine = {
 window.Engine = Engine;
 
 /**
- * TACTICAL HEAT MAP ENGINE - V3 (Comprehensive Board Awareness)
- * Optimized for Token Efficiency
+ * TACTICAL & STRATEGIC ENGINE - V5 (Platinum)
  */
 const HeatMap = {
-    val: { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }, // Normalized: King = 0 for trades
+    val: { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }, 
     
-    // Core Entry Point
     analyze: function(chess) {
-        const fen = chess.fen();
-        
         let report = {
             exchange: {},
-            pins: [],
-            threats: []
+            strategy: this.getStrategicSnapshot(chess),
+            pins: []
         };
 
         const board = chess.board();
         const files = ['a','b','c','d','e','f','g','h'];
 
-        // 1. Static Exchange Evaluation (SEE) for every square
+        // Full Board Scan
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
-                // We only need to check squares relevant to the position
-                const piece = board[r][c];
                 const sq = files[c] + (8-r);
-                
                 const exchange = this.getExchangeAnalysis(chess, sq);
-                // Only store if there is actual activity (attackers present)
-                if (exchange.attackers.length > 0) {
-                    report.exchange[sq] = exchange;
+                if (exchange.attackers.length > 0) report.exchange[sq] = exchange;
+            }
+        }
+        return report;
+    },
+
+    getStrategicSnapshot: function(chess) {
+        const board = chess.board();
+        let matW = 0, matB = 0;
+        let centerW = 0, centerB = 0; 
+        
+        // Center Squares (d4, d5, e4, e5) -> Indices: (3,3), (3,4), (4,3), (4,4)
+        const centerSquares = [[3,3], [3,4], [4,3], [4,4]];
+
+        // 1. Calculate Material
+        for(let r=0; r<8; r++){
+            for(let c=0; c<8; c++){
+                const p = board[r][c];
+                if(p) {
+                    const v = this.val[p.type] || 0;
+                    if(p.color === 'w') matW += v; else matB += v;
                 }
             }
         }
 
-        // 2. Pin Detection
-        report.pins = this.getPinMap(chess);
+        // 2. Calculate Center Presence
+        // We check who physically occupies the center
+        centerSquares.forEach(coord => {
+            const p = board[coord[0]][coord[1]];
+            if (p) {
+                if (p.color === 'w') centerW++; else centerB++;
+            }
+        });
 
-        return report;
+        return {
+            material: matW - matB, 
+            center: centerW - centerB, // Positive = White controls center
+            phase: (matW + matB) < 20 ? "Endgame" : "Middlegame" 
+        };
     },
 
     getExchangeAnalysis: function(chess, square) {
@@ -820,58 +841,48 @@ const HeatMap = {
         const attackers = this.getAttackers(temp, square, opp); 
         const defenders = this.getAttackers(temp, square, turn); 
         
-        // Calculate raw material power on square
         const atkVal = attackers.reduce((acc, p) => acc + (this.val[p.toLowerCase()] || 0), 0);
         const defVal = defenders.reduce((acc, p) => acc + (this.val[p.toLowerCase()] || 0), 0);
-        const net = defVal - atkVal;
-
-        // Determine status
+        
         let status = "Safe";
         if (attackers.length > defenders.length) status = "Lost";
-        else if (attackers.length > 0) status = "Contested";
+        else if (attackers.length > 0 && atkVal < defVal) status = "Contested"; 
 
         return {
-            attackers: attackers,
-            defenders: defenders,
-            atkValue: atkVal,
-            defValue: defVal,
-            net: net,
-            status: status
+            attackers: attackers, defenders: defenders,
+            atkValue: atkVal, defValue: defVal,
+            net: defVal - atkVal, status: status
         };
     },
 
     getAttackers: function(chess, sq, color) {
         const temp = new Chess(chess.fen());
         const tokens = chess.fen().split(' ');
-        tokens[1] = color;
-        tokens[3] = '-'; 
+        tokens[1] = color; tokens[3] = '-'; 
         temp.load(tokens.join(' '));
-        
-        const colorMoves = temp.moves({ verbose: true });
-        const attackers = [];
-        
-        colorMoves.forEach(m => {
-            if (m.to === sq) attackers.push(m.piece.toUpperCase());
-        });
-        
-        return attackers;
-    },
-
-    getPinMap: function(chess) {
-        return [];
+        const moves = temp.moves({ verbose: true });
+        return moves.filter(m => m.to === sq).map(m => m.piece.toUpperCase());
     },
     
-    // OPTIMIZED FORMATTER: Reduces token usage by ~90% to prevent API limits
     formatForAI: function(report) {
         let txt = ""; 
+        
+        // 1. High-Level Strategy Tags
+        const mat = report.strategy.material > 0 ? `+${report.strategy.material}` : report.strategy.material;
+        const cen = report.strategy.center > 0 ? `White+${report.strategy.center}` : (report.strategy.center < 0 ? `Black+${Math.abs(report.strategy.center)}` : "Equal");
+        
+        txt += `[Phase: ${report.strategy.phase}] [Mat: ${mat}] [Center: ${cen}] `;
+
+        // 2. Critical Threats (Filtered)
+        let threats = "";
         for (const [sq, data] of Object.entries(report.exchange)) {
-            // CRITICAL CHANGE: Only report squares that are actually dangerous or complex.
-            // We ignore "Safe" squares where defenders >= attackers to save massive amounts of tokens.
             if (data.status === 'Lost' || (data.status === 'Contested' && data.atkValue > 1)) {
-                txt += `[${sq}: ${data.status} (Net ${data.net}, AtkVal ${data.atkValue})] `;
+                threats += `${sq}:${data.status} `;
             }
         }
-        return txt ? "Radar: " + txt : "";
+        if(threats) txt += `| THREATS: ${threats}`;
+        
+        return txt;
     }
 };
 window.HeatMap = HeatMap;
@@ -886,64 +897,71 @@ const Gemini = {
         const k = getEffectiveKey();
         if (!k) { GUI.showToast("Please set API Key in Settings!", "error"); return false; }
 
-        let logStr = `Game Context:\nOpening: ${openingName}\n\n`;
+        // 1. THE DESTINY (Final Result)
+        const finalFrame = analysisData[analysisData.length - 1];
+        const resultHeader = `
+**GAME METADATA**
+- Opening: ${openingName}
+- Total Moves: ${analysisData.length}
+- Result: ${finalFrame ? (finalFrame.isMate ? "Checkmate" : "Resignation/Draw") : 'Unknown'}
+`;
+
+        let timeline = "";
         
+        // 2. THE TIMELINE (Rich Context)
         analysisData.forEach((d, i) => {
-            const isUserTurn = (focus === 'both' || focus === d.color);
-            if (!isUserTurn) return;
+            if (focus !== 'both' && focus !== d.color) return;
 
             let evalText = d.eval;
             if(d.eval.toString().startsWith('M')) evalText = `Mate in ${d.eval.replace('M','')}`;
 
-            const moveInfo = `[PLY ${i+1}] ${d.color==='w'?'White':'Black'} played ${d.san}`;
-            const engineInfo = `\n    - Best Move: ${d.bestMoveSan || '?'}`;
-            const engineLine = `\n    - PV (Engine Plan): ${d.pvSan || 'None'}`;
-            
-            let tacticalText = "\n    " + HeatMap.formatForAI(d.tactics);
+            // We explicitly calculate the "Pain" (Eval Drop)
+            // If the move was a Blunder, we highlight exactly how much was lost.
+            let painMetric = "";
+            if (d.evalDiff && Math.abs(parseFloat(d.evalDiff)) > 0.5) {
+                painMetric = `| EVAL DROP: ${d.evalDiff}`;
+            }
 
-            const outcome = `\n    - Result: Eval ${evalText}, Class ${d.classification}`;
-            
-            logStr += `${moveInfo} ${tacticalText} ${engineInfo} ${engineLine} ${outcome}\n\n`;
+            timeline += `
+[PLY ${i+1}] ${d.color==='w'?'White':'Black'} played **${d.san}**
+   - Class: ${d.classification} ${painMetric}
+   - Context: ${HeatMap.formatForAI(d.tactics)}
+   - Best Line (The Future): ${d.pvSan || "None"}
+`;
         });
 
-        if (logStr.length < 50) logStr = "Game was short.";
+        if (timeline.length < 50) timeline = "Game was short.";
 
         const prompt = `
-You are a Grandmaster Chess Coach.
+You are a World-Class Grandmaster Coach. 
+I have provided the **Full Game Timeline** below.
 
-**YOUR DATA SOURCE:**
-For every move, I have provided:
-1. The Move & Engine Best Move.
-2. **Tactical Radar:** This gives you a comprehensive exchange analysis for every contested square.
-   - Example: "e4: Attacked by [N,P] (Val: 4), Defended by [K] (Val: 0). Net Defense: -4. Status: Lost".
-   - Use this to identify undefended pieces, bad trades, and tactical oversights based on the *Net Defense* value.
-3. **Principal Variation (PV):** The future moves the engine predicts.
+**CONTEXT:**
+${resultHeader}
 
-**CRITICAL INSTRUCTIONS:**
-1. **No Meta-Talk:** Do NOT mention phrases like "The Tactical Radar shows", "The data indicates", or "My sensors detect". Speak naturally, like a human coach looking at the board.
-2. **Book Moves:** If a move is classified as 'Book', explain the strategic opening principle (e.g., controlling center, developing pieces). DO NOT CRITICIZE IT.
-3. **Defensive Logic:** If a move defends a piece that was listed as 'Attacked', acknowledge the defense. 
-4. **JSON ONLY:** Return *only* the JSON object.
+**YOUR MISSION:**
+Analyze the timeline. Focus on the *Turning Points* where the "Eval Drop" is high.
+1. **Compare Real vs. Ideal:** You know the "Best Line" (The Future). If the player missed it, explain *why* the engine's plan was superior.
+2. **Use the Stats:** Reference [Center], [Mat], and [Eval Drop]. Example: "You lost control of the [Center] here, causing a [Eval Drop] of -2.0."
+3. **Be Concise but Deep:** Do not fluff. Give concrete chess principles.
 
-**TASK:**
-Explain the moves in the provided game log.
-
-**JSON Format:**
+**JSON RETURN FORMAT:**
 {
     "12": {
-        "analysis": "This pawn push is a mistake. Your Knight on f3 was overwhelmed (2 attackers vs 1 defender), and this move unpins it but loses material.",
-        "pv_explanation": ["Nf3 prevents the fork", "Be2 prepares castling"] 
+        "analysis": "A critical error. You played f3, weakening your King. The Strategic Context shows you were already behind in [Center] control, and this move ignores the urgent threat on d4. You should have played Nf3.",
+        "pv_explanation": ["Nf3 defends d4", "Be2 develops"] 
     }
 }
 
-**Game Log:**
-${logStr}
+**TIMELINE:**
+${timeline}
         `;
 
         try {
-            log("Sending rich context request to Gemini...");
+            log("Sending Platinum Analysis...");
+            const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
             
-            const res = await fetch(MODEL_ENDPOINT+`?key=${k}`, {
+            const res = await fetch(endpoint+`?key=${k}`, {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -951,15 +969,14 @@ ${logStr}
 
             const d = await res.json();
             
-            // FIX 2: IMPROVED ERROR LOGGING
             if (d.error) {
-                log(`Gemini API Error: ${d.error.message}`, 'ERROR');
+                log(`API Error: ${d.error.message}`, 'ERROR');
                 GUI.showToast(`API Error: ${d.error.message}`, "error");
                 return false;
             }
 
             if(!d.candidates || !d.candidates[0]) {
-                log("Gemini API returned no content.", 'ERROR');
+                log("No content returned.", 'ERROR');
                 return false;
             }
             const text = d.candidates[0].content.parts[0].text;
@@ -969,24 +986,18 @@ ${logStr}
             if (start !== -1 && end !== -1) {
                 cleanText = cleanText.substring(start, end + 1);
                 this.comments = JSON.parse(cleanText);
-                log("Gemini Analysis Complete.");
+                log("Coach Analysis Complete.");
                 return true;
             }
-            log("Gemini response was not valid JSON or complete.", 'ERROR');
             return false;
         } catch (e) { 
-            console.error("Gemini Error", e);
-            if (e.name === 'AbortError') {
-                log("Coach Analysis Failed (Request Aborted). Retrying or check network.", 'ERROR');
-            } else {
-                GUI.showToast("Coach Analysis Failed (Network/API). Check System Log.", 'ERROR');
-            }
+            console.error(e);
+            GUI.showToast("Analysis Failed. See Log.", 'ERROR');
             return false; 
         }
     }
 };
 window.Gemini = Gemini;
-
 /**
  * GAME LOGIC
  */
