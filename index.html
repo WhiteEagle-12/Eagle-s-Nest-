@@ -927,10 +927,19 @@ const Gemini = {
                 engineNote = ` | Better: ${d.bestMoveSan} (Reason: ${d.engineReason || 'Active play'})`;
             }
 
+            let comparison = "";
+            if (d.stats && d.stats.best) {
+                const u = d.stats.user;
+                const b = d.stats.best;
+                // Formats a direct comparison for the AI
+                comparison = ` | COMPARISON: User(Mat:${u.material}, Center:${u.center}) vs EngineBest(Mat:${b.material}, Center:${b.center})`;
+            }
+
             timeline += `
 [${i+1}] ${d.color.toUpperCase()} move: ${d.san} (${d.classification})
    > WHAT HAPPENED: ${notes.join(", ") || "Positional/Quiet move"}
    > ENGINE: ${engineNote}
+   > STATS: ${comparison}
 `;
         });
 
@@ -1273,6 +1282,38 @@ window.Game = Game;
  * Includes: Opening ID, True Vision (Facts), Engine Logic, and Puzzle Generation.
  */
 const Scanner = {
+    getDetailedMoveStats: function(chessObj, color) {
+        const getMat = (fen) => {
+            let s = 0;
+            const vals = {p:1, n:3, b:3, r:5, q:9, k:0};
+            fen.split(' ')[0].split('').forEach(c => {
+                const lower = c.toLowerCase();
+                if(vals[lower]) {
+                    const val = vals[lower];
+                    s += (c === c.toUpperCase() ? (color === 'w' ? val : -val) : (color === 'b' ? val : -val));
+                }
+            });
+            return s;
+        };
+        // Simple center check (d4, d5, e4, e5)
+        const getCenter = (gameInst) => {
+            const board = gameInst.board();
+            const centerSquares = [[3,3], [3,4], [4,3], [4,4]]; // d5, e5, d4, e4
+            let score = 0;
+            centerSquares.forEach(coord => {
+                const p = board[coord[0]][coord[1]];
+                if (p && p.color === color) score++;
+            });
+            return score;
+        };
+
+        return {
+            material: getMat(chessObj.fen()),
+            center: getCenter(chessObj),
+            isCheck: chessObj.in_check()
+        };
+    },
+
     start: async function() {
         const btn = document.getElementById('scanBtn');
         const bar = document.getElementById('scanBar');
@@ -1370,6 +1411,20 @@ const Scanner = {
                     }
                 }
 
+                // --- NEW SIMULATION LOGIC START ---
+                // 1. Calculate User Stats (Actual Reality)
+                // tempChess is already at the state AFTER the user's move
+                const userStats = this.getDetailedMoveStats(tempChess, moveObj.color);
+
+                // 2. Calculate Best Move Stats (Counter-Factual Reality)
+                let bestMoveStats = null;
+                if (bestMoveSan) {
+                    const simGame = new Chess(fenBefore); // Go back in time
+                    simGame.move(bestMoveSan);            // Play the engine's move
+                    bestMoveStats = this.getDetailedMoveStats(simGame, moveObj.color);
+                }
+                // --- NEW SIMULATION LOGIC END ---
+
                 // 7. DATA PACKING
                 const data = {
                     san: moveObj.san, color: moveObj.color,
@@ -1380,7 +1435,9 @@ const Scanner = {
                     facts: events, // The Truth
                     engineReason: engineReason,
                     tactics: HeatMap.analyze(tempChess), // Structure data
-                    fenBefore: fenBefore
+                    fenBefore: fenBefore,
+                    // INJECT THE NEW COMPARISON DATA
+                    stats: { user: userStats, best: bestMoveStats }
                 };
                 Game.analysisData.push(data);
                 
